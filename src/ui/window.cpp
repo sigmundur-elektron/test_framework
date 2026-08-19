@@ -4,6 +4,8 @@
 #include "../utils/inputs/input_manager.h"
 #include "gui.h"
 #include "themes.h"
+#include "agent_panel.h"
+#include "profiler.h"
 #include <iostream>
 
 static bool b_wireframe = false;
@@ -11,6 +13,8 @@ static bool b_wireframeToggle = false;
 static bool b_show_console = true;
 static bool b_show_demo_window = false;
 static bool b_show_demo_windowToggle = false;
+
+static bool b_show_agents = true;
 
 bool show_save_menu = false;
 bool show_load_menu = false;
@@ -23,11 +27,15 @@ void glfw_error_callback(int error, const char *description)
 
 int window::init()
 {
+	PROFILE_FUNCTION();
 	glfwSetErrorCallback(glfw_error_callback);
-	if (!glfwInit())
 	{
-		fprintf(stderr, "Failed to initialize GLFW\n");
-		return -1;
+		PROFILE_SCOPE("glfwInit");
+		if (!glfwInit())
+		{
+			fprintf(stderr, "Failed to initialize GLFW\n");
+			return -1;
+		}
 	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -35,7 +43,10 @@ int window::init()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Setup window
-	m_window = glfwCreateWindow(1200, 700, "template", NULL, NULL);
+	{
+		PROFILE_SCOPE("glfwCreateWindow");
+		m_window = glfwCreateWindow(1200, 700, "template", NULL, NULL);
+	}
 	if (m_window == NULL)
 	{
 		fprintf(stderr, "Failed to create GLFW window\n");
@@ -45,16 +56,23 @@ int window::init()
 	glfwMakeContextCurrent(m_window);
 	glfwSetWindowUserPointer(m_window, &_input);
 	glfwSwapInterval(1); // Enable vsync
-	set_input();
+	{
+		PROFILE_SCOPE("set_input");
+		set_input();
+	}
 
 	// Initialize GLAD (or GLEW)
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
-		std::cerr << "Failed to initialize OpenGL loader" << std::endl;
-		return -1;
+		PROFILE_SCOPE("gladLoadGLLoader");
+		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+		{
+			std::cerr << "Failed to initialize OpenGL loader" << std::endl;
+			return -1;
+		}
 	}
 
 	// Setup Dear ImGui context
+	PROFILE_SCOPE("imgui_setup");
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO &io = ImGui::GetIO();
@@ -112,20 +130,18 @@ void window::render()
 		if (ImGui::BeginTable("split", 3))
 		{
 			ImGui::TableNextColumn();
-			ImGui::Checkbox("Wireframe", &b_wireframe);
-			ImGui::TableNextColumn();
 			ImGui::Checkbox("Console", &b_show_console);
 			ImGui::TableNextColumn();
-			ImGui::Checkbox("Demo", &b_show_demo_window);
+			ImGui::Checkbox("Agents", &b_show_agents);
 			ImGui::EndTable();
 		}
 	}
 
-	set_wireframe_mode();
-	set_demo_mode();
-
 	if (b_show_console)
 		show_console(&b_show_console);
+
+	if (b_show_agents)
+		show_agent_panel(&b_show_agents);
 
 	ImGui::Separator();
 

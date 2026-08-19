@@ -1,4 +1,5 @@
 #include "app.h"
+#include "profiler.h"
 
 app::app()
 	: input(input_manager::get_instance())
@@ -7,7 +8,9 @@ app::app()
 
 void app::run()
 {
+	PROFILE_BEGIN_SESSION("startup", "startup_profile.json");
 	init();
+	PROFILE_END_SESSION();
 
 	while (!main_window.should_exit())
 	{
@@ -18,9 +21,16 @@ void app::run()
 
 void app::init()
 {
+	PROFILE_FUNCTION();
 	std::print("Init..");
-	input.set_key_mapping();
-	main_window.init();
+	{
+		PROFILE_SCOPE("input.set_key_mapping");
+		input.set_key_mapping();
+	}
+	{
+		PROFILE_SCOPE("window.init");
+		main_window.init();
+	}
 }
 
 void app::update()

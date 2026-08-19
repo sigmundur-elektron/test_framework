@@ -8,11 +8,14 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+
 # Dependency paths
 set(GLFW_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw")
 set(IMGUI_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/imgui")
 set(GLAD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/glad")
 set(DOCTEST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/doctest")
+set(GLAZE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/glaze")
+set(PROFILER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/profiler")
 
 # Validate vendored dependencies
 if(NOT EXISTS "${GLFW_PATH}/CMakeLists.txt")
@@ -27,6 +30,9 @@ endif()
 if(NOT EXISTS "${DOCTEST_PATH}/CMakeLists.txt")
     message(FATAL_ERROR "Missing vendored dependency: external/doctest")
 endif()
+if(NOT EXISTS "${GLAZE_PATH}/CMakeLists.txt")
+    message(FATAL_ERROR "Missing vendored dependency: external/glaze")
+endif()
 
 # Build GLFW as static
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
@@ -39,6 +45,10 @@ add_subdirectory("${GLFW_PATH}")
 
 # Doctest
 add_subdirectory("${DOCTEST_PATH}")
+
+# Glaze (JSON / serialization) - vendored, header-only. Defines glaze::glaze.
+set(glaze_DEVELOPER_MODE OFF CACHE BOOL "" FORCE)
+add_subdirectory("${GLAZE_PATH}")
 
 # GLAD static lib
 add_library(glad STATIC
@@ -84,6 +94,7 @@ target_include_directories(test PRIVATE
     "${IMGUI_PATH}"
     "${IMGUI_PATH}/backends"
     "${DOCTEST_PATH}"
+    "${PROFILER_PATH}"
 )
 
 target_link_libraries(test PRIVATE
@@ -91,7 +102,13 @@ target_link_libraries(test PRIVATE
     imgui
     glad
     doctest::doctest
+    glaze::glaze
 )
+
+# Glaze requires a conformant preprocessor on MSVC
+if(MSVC)
+    target_compile_options(test PRIVATE /Zc:preprocessor)
+endif()
 
 if(WIN32)
     target_link_libraries(test PRIVATE opengl32)
@@ -110,3 +127,4 @@ elseif(UNIX)
     find_package(OpenGL REQUIRED)
     target_link_libraries(test PRIVATE OpenGL::GL dl pthread)
 endif()
+
