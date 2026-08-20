@@ -1,5 +1,6 @@
 #include "planner_panel.h"
-#include "../ai/agent/agent_registry.h"
+#include "../ai/agent/agent.h"
+#include "../features/agent_service.h"
 #include "../include/imgui.h"
 #include <string>
 
@@ -11,8 +12,8 @@ void show_planner_panel(bool *p_open)
 		return;
 	}
 
-	auto &registry = agent_registry::get_instance();
-	std::vector<agent *> agents = registry.all();
+	auto &service = features::agent_service::instance();
+	std::vector<agent *> agents = service.all();
 
 	if (agents.empty())
 	{

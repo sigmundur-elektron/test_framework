@@ -1,4 +1,6 @@
 #include "app.h"
+#include "features/agent_service.h"
+#include "features/repository/repository_provider.h"
 #include "profiler.h"
 
 app::app()
@@ -24,6 +26,13 @@ void app::init()
 	PROFILE_FUNCTION();
 	std::print("Init..");
 	{
+		PROFILE_SCOPE("repository.start");
+		std::string status;
+		features::repository_provider::instance().start(status);
+		std::println("DB: {}", status);
+		features::agent_service::instance().load_from_repository();
+	}
+	{
 		PROFILE_SCOPE("input.set_key_mapping");
 		input.set_key_mapping();
 	}
@@ -43,4 +52,5 @@ void app::end()
 {
 	std::print("Terminating..");
 	main_window.terminate();
+	features::repository_provider::instance().stop();
 }

@@ -1,7 +1,9 @@
 #include "agent_panel.h"
-#include "../ai/agent/agent_registry.h"
+#include "../ai/agent/agent.h"
+#include "../features/agent_service.h"
 #include "../include/imgui.h"
-#include <cstring>
+#include <algorithm>
+#include <string>
 
 void show_agent_panel(bool *p_open)
 {
@@ -11,7 +13,7 @@ void show_agent_panel(bool *p_open)
 		return;
 	}
 
-	auto &registry = agent_registry::get_instance();
+	auto &service = features::agent_service::instance();
 
 	// --- Create a new agent ---
 	static char new_name[64] = "planner";
@@ -22,11 +24,8 @@ void show_agent_panel(bool *p_open)
 	static std::string create_status;
 	if (ImGui::Button("Add agent"))
 	{
-		agent_config cfg;
-		cfg.name = new_name;
-		cfg.model_endpoint = new_endpoint;
-		if (registry.create(cfg)) // nullptr if name empty or taken
-			create_status = "Created '" + cfg.name + "'.";
+		if (service.create(new_name, new_endpoint)) // nullptr if empty/taken
+			create_status = std::string("Created '") + new_name + "'.";
 		else
 			create_status = "Not created (name empty or already exists).";
 	}
@@ -36,18 +35,20 @@ void show_agent_panel(bool *p_open)
 	ImGui::SeparatorText("Live agents");
 
 	// --- Edit existing agents + wire A2A ---
-	for (agent *a : registry.all())
+	for (agent *a : service.all())
 	{
-		agent_config &cfg = a->mutable_config();
+		const agent_config &cfg = a->config();
 		ImGui::PushID(cfg.name.c_str());
 
 		if (ImGui::CollapsingHeader(cfg.name.c_str()))
 		{
-			ImGui::Checkbox("enabled", &cfg.enabled);
+			bool enabled = cfg.enabled;
+			if (ImGui::Checkbox("enabled", &enabled))
+				service.set_enabled(cfg.name, enabled);
 
 			// A2A wiring: list every other agent as a toggleable peer.
 			ImGui::TextUnformatted("A2A peers:");
-			for (agent *other : registry.all())
+			for (agent *other : service.all())
 			{
 				if (other == a)
 					continue;
@@ -55,17 +56,16 @@ void show_agent_panel(bool *p_open)
 				bool linked = std::find(cfg.peer_agents.begin(),
 										cfg.peer_agents.end(), peer) != cfg.peer_agents.end();
 				if (ImGui::Checkbox(peer.c_str(), &linked))
-				{
-					if (linked)
-						cfg.peer_agents.push_back(peer);
-					else
-						std::erase(cfg.peer_agents, peer);
-				}
+					service.set_peer_linked(cfg.name, peer, linked);
 			}
 
 			// Goal dispatch lives in the Planner window now.
 			if (ImGui::Button("Remove"))
-				registry.remove(cfg.name);
+			{
+				service.remove(cfg.name);
+				ImGui::PopID();
+				break; // 'a' is now dangling; rebuild list next frame
+			}
 		}
 
 		ImGui::PopID();

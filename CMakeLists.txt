@@ -16,6 +16,7 @@ set(GLAD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/glad")
 set(DOCTEST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/doctest")
 set(GLAZE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/glaze")
 set(PROFILER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/profiler")
+set(LIBPQXX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/libpqxx")
 
 # Validate vendored dependencies
 if(NOT EXISTS "${GLFW_PATH}/CMakeLists.txt")
@@ -36,6 +37,9 @@ endif()
 if(NOT EXISTS "${GLAZE_PATH}/CMakeLists.txt")
     message(FATAL_ERROR "Missing vendored dependency: external/glaze")
 endif()
+if(NOT EXISTS "${LIBPQXX_PATH}/CMakeLists.txt")
+    message(FATAL_ERROR "Missing vendored dependency: external/libpqxx")
+endif()
 
 # Build GLFW as static
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
@@ -52,6 +56,11 @@ add_subdirectory("${DOCTEST_PATH}")
 # Glaze (JSON / serialization) - vendored, header-only. Defines glaze::glaze.
 set(glaze_DEVELOPER_MODE OFF CACHE BOOL "" FORCE)
 add_subdirectory("${GLAZE_PATH}")
+
+# libpqxx (PostgreSQL C++ client) - vendored. Defines the pqxx target.
+set(SKIP_BUILD_TEST ON CACHE BOOL "" FORCE)
+set(PQXX_LIBRARIES pqxx CACHE STRING "" FORCE)
+add_subdirectory("${LIBPQXX_PATH}")
 
 # GLAD static lib
 add_library(glad STATIC
@@ -106,6 +115,7 @@ target_link_libraries(test PRIVATE
     glad
     doctest::doctest
     glaze::glaze
+    pqxx
 )
 
 # Glaze requires a conformant preprocessor on MSVC
