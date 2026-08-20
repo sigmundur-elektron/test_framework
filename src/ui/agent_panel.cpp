@@ -1,6 +1,5 @@
 #include "agent_panel.h"
 #include "../ai/agent/agent_registry.h"
-#include "../ai/persistence/ai_persistence.h"
 #include "../include/imgui.h"
 #include <cstring>
 
@@ -20,13 +19,19 @@ void show_agent_panel(bool *p_open)
 	ImGui::SeparatorText("Create agent");
 	ImGui::InputText("name", new_name, sizeof(new_name));
 	ImGui::InputText("endpoint", new_endpoint, sizeof(new_endpoint));
+	static std::string create_status;
 	if (ImGui::Button("Add agent"))
 	{
 		agent_config cfg;
 		cfg.name = new_name;
 		cfg.model_endpoint = new_endpoint;
-		registry.create(cfg); // no-op if name taken
+		if (registry.create(cfg)) // nullptr if name empty or taken
+			create_status = "Created '" + cfg.name + "'.";
+		else
+			create_status = "Not created (name empty or already exists).";
 	}
+	if (!create_status.empty())
+		ImGui::TextUnformatted(create_status.c_str());
 
 	ImGui::SeparatorText("Live agents");
 
@@ -58,37 +63,13 @@ void show_agent_panel(bool *p_open)
 				}
 			}
 
-			// Dispatch a goal to this agent.
-			static char goal[256] = "";
-			ImGui::InputText("goal", goal, sizeof(goal));
-			if (ImGui::Button("Run"))
-				a->handle(goal);
-			ImGui::SameLine();
+			// Goal dispatch lives in the Planner window now.
 			if (ImGui::Button("Remove"))
 				registry.remove(cfg.name);
 		}
 
 		ImGui::PopID();
 	}
-
-	// --- Persistence ---
-	static char setup_path[128] = "ai_setup.json";
-	static std::string status;
-	ImGui::SeparatorText("Setup");
-	ImGui::InputText("file", setup_path, sizeof(setup_path));
-	if (ImGui::Button("Save setup"))
-	{
-		std::string err;
-		status = ai_persistence::save(setup_path, err) ? "Saved." : ("Save failed: " + err);
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Load setup"))
-	{
-		std::string err;
-		status = ai_persistence::load(setup_path, err) ? "Loaded." : ("Load failed: " + err);
-	}
-	if (!status.empty())
-		ImGui::TextUnformatted(status.c_str());
 
 	ImGui::End();
 }

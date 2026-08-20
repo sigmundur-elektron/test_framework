@@ -50,21 +50,6 @@ void set_render_stats()
 	ImGui::Text("(%.1f FPS)", io.Framerate);
 }
 
-void list_saved_states(bool &_show)
-{
-	static char loadName[64] = "saveName1";
-	ImGui::InputTextMultiline(" ", loadName, sizeof(loadName), ImVec2(100, 25));
-	ImGui::SameLine();
-	if (ImGui::Button("load"))
-	{
-		_show = false;
-	}
-	ImGui::Separator();
-	ImGui::Text("List of saved states");
-	ImGui::Separator();
-}
-
-
 void show_console(bool *p_open)
 {
 	auto &console = console::get_instance();

@@ -15,6 +15,12 @@ struct agent
 	std::string handle(const std::string &user_goal);
 	void end();
 
+	/// Non-mutating plan preview for the planner UI (does not touch memory).
+	std::vector<plan_step> preview(const std::string &user_goal) const
+	{
+		return _planner.plan(user_goal);
+	}
+
 	const agent_config &config() const { return _config; }
 	agent_config &mutable_config() { return _config; } // GUI edits this live
 

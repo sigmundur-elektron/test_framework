@@ -5,19 +5,14 @@
 #include "gui.h"
 #include "themes.h"
 #include "agent_panel.h"
+#include "planner_panel.h"
+#include "setup_panel.h"
 #include "profiler.h"
 #include <iostream>
 
-static bool b_wireframe = false;
-static bool b_wireframeToggle = false;
 static bool b_show_console = true;
-static bool b_show_demo_window = false;
-static bool b_show_demo_windowToggle = false;
-
 static bool b_show_agents = true;
-
-bool show_save_menu = false;
-bool show_load_menu = false;
+static bool b_show_planner = true;
 
 // Error callback function for GLFW
 void glfw_error_callback(int error, const char *description)
@@ -115,16 +110,12 @@ void window::render()
 
 	m_docking_id = set_docking_mode(); // needs one ImGui::End();
 
-	if (b_show_demo_window)
-		ImGui::ShowDemoWindow(&b_show_demo_window);
-
 	ImGuiWindowFlags sidebar_window_flags = ImGuiDockNodeFlags_AutoHideTabBar;
 	ImGui::SetNextWindowBgAlpha(0.0f);					 // disable dockspace overlay over the game window
 	ImGui::Begin("Sidebar", NULL, sidebar_window_flags); // needs one ImGui::End();
 	ImGui::Separator();
 
 	// OPTIONS
-
 	if (!ImGui::CollapsingHeader("Options"))
 	{
 		if (ImGui::BeginTable("split", 3))
@@ -133,9 +124,14 @@ void window::render()
 			ImGui::Checkbox("Console", &b_show_console);
 			ImGui::TableNextColumn();
 			ImGui::Checkbox("Agents", &b_show_agents);
+			ImGui::TableNextColumn();
+			ImGui::Checkbox("Planner", &b_show_planner);
 			ImGui::EndTable();
 		}
 	}
+
+	// Save/load setup lives here in the right panel.
+	show_setup_controls();
 
 	if (b_show_console)
 		show_console(&b_show_console);
@@ -143,49 +139,19 @@ void window::render()
 	if (b_show_agents)
 		show_agent_panel(&b_show_agents);
 
+	if (b_show_planner)
+		show_planner_panel(&b_show_planner);
+
 	ImGui::Separator();
 
 	// Render stats
 	set_render_stats();
 	ImGui::Separator();
 
-	if (ImGui::Button("Save Map"))
-	{
-		show_save_menu = true;
-	}
-
 	ImGuiWindowFlags window_flags = 0;
 	window_flags |= ImGuiWindowFlags_NoCollapse;
 	window_flags |= ImGuiWindowFlags_NoNav;
 	window_flags |= ImGuiWindowFlags_NoDocking;
-
-	if (show_save_menu)
-	{
-		const ImGuiViewport *main_viewport = ImGui::GetMainViewport();
-		ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 650, main_viewport->WorkPos.y + 20), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Save Window", &show_save_menu, window_flags);
-		static char saveName[64] = "saveName1";
-		ImGui::InputText("name", saveName, sizeof(saveName));
-		if (ImGui::Button("save entities"))
-		{
-			show_save_menu = false;
-		}
-
-		ImGui::End();
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Load Map"))
-	{
-		show_load_menu = true;
-	}
-	if (show_load_menu)
-	{
-		const ImGuiViewport *main_viewport = ImGui::GetMainViewport();
-		ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 650, main_viewport->WorkPos.y + 20), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Load Window", &show_load_menu, window_flags);
-		list_saved_states(show_load_menu);
-		ImGui::End();
-	}
 
 	ImGui::End();
 	ImGui::End();
@@ -198,35 +164,6 @@ void window::render()
 	// Swap buffers
 	glfwSwapBuffers(m_window);
 }
-
-void window::set_demo_mode()
-{
-	if (b_show_demo_window != b_show_demo_windowToggle)
-	{
-		if (b_show_demo_window)
-			b_show_demo_windowToggle = true;
-		else
-			b_show_demo_windowToggle = false;
-	}
-}
-
-void window::set_wireframe_mode()
-{
-	if (b_wireframe != b_wireframeToggle)
-	{
-		if (b_wireframe)
-		{
-			b_wireframeToggle = true;
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		}
-		else
-		{
-			b_wireframeToggle = false;
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		}
-	}
-}
-
 
 void window::resize()
 {

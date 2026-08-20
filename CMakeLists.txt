@@ -24,6 +24,9 @@ endif()
 if(NOT EXISTS "${IMGUI_PATH}/imgui.cpp")
     message(FATAL_ERROR "Missing vendored dependency: external/imgui")
 endif()
+if(NOT EXISTS "${PROFILER_PATH}/profiler.h")
+    message(FATAL_ERROR "Missing vendored dependency: external/profiler")
+endif()
 if(NOT EXISTS "${GLAD_PATH}/src/glad.c")
     message(FATAL_ERROR "Missing vendored dependency: external/glad")
 endif()
@@ -107,7 +110,9 @@ target_link_libraries(test PRIVATE
 
 # Glaze requires a conformant preprocessor on MSVC
 if(MSVC)
-    target_compile_options(test PRIVATE /Zc:preprocessor)
+    # /Zc:preprocessor - conformant preprocessor required by Glaze
+    # /EHsc           - enable C++ exception unwind semantics (required by DocTest)
+    target_compile_options(test PRIVATE /Zc:preprocessor /EHsc)
 endif()
 
 if(WIN32)
