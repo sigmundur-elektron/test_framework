@@ -1,6 +1,6 @@
 #pragma once
-#include "../../ai/agent/agent_config.h"
-#include "../../ai/agent/memory.h"
+#include "../data/agent/agent_config.h"
+#include "../data/agent/memory.h"
 #include <string>
 #include <vector>
 

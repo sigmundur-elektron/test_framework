@@ -1,6 +1,8 @@
 #include "repository_provider.h"
 #include "in_memory_repository.h"
+#ifdef TF_POSTGRES_ENABLED
 #include "postgres_repository.h"
+#endif
 
 namespace features
 {
@@ -12,6 +14,7 @@ repository_provider &repository_provider::instance()
 
 bool repository_provider::start(std::string &status)
 {
+#ifdef TF_POSTGRES_ENABLED
 	auto pg = std::make_unique<postgres_repository>();
 	std::string error;
 	if (pg->connect(error))
@@ -28,6 +31,15 @@ bool repository_provider::start(std::string &status)
 	_repo = std::move(mem);
 	status = "PostgreSQL unavailable (" + error + "); using in-memory store";
 	return false;
+#else
+	// Postgres backend not compiled in — use the in-memory store.
+	auto mem = std::make_unique<in_memory_repository>();
+	std::string ignore;
+	mem->connect(ignore);
+	_repo = std::move(mem);
+	status = "PostgreSQL backend not built; using in-memory store";
+	return false;
+#endif
 }
 
 void repository_provider::stop()

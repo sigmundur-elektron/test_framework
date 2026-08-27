@@ -1,7 +1,7 @@
 #pragma once
 #include <doctest/doctest.h>
-#include "../src/ai/tools/read_file_tool.h"
-#include "../src/ai/tools/tool_registry.h"
+#include "../src/data/tools/read_file_tool.h"
+#include "../src/data/tools/tool_registry.h"
 #include <fstream>
 #include <memory>
 

@@ -1,9 +1,9 @@
 #include "setup_service.h"
-#include "../ai/agent/agent_registry.h"
-#include "../ai/persistence/ai_persistence.h"
+#include "../data/agent/agent_registry.h"
+#include "../data/persistence/ai_persistence.h"
 #include "agent_service.h"
-#include "repository/i_repository.h"
-#include "repository/repository_provider.h"
+#include "../repository/i_repository.h"
+#include "../repository/repository_provider.h"
 
 namespace features
 {

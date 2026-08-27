@@ -1,5 +1,5 @@
 #include "postgres_repository.h"
-#include "../../ai/persistence/ai_setup.h" // glz::meta<permissions::scope>
+#include "../ai/persistence/ai_setup.h" // glz::meta<permissions::scope>
 #include <cstdlib>
 #include <glaze/glaze.hpp>
 #include <pqxx/pqxx>

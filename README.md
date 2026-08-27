@@ -20,9 +20,9 @@ The codebase is organized into three conceptual layers:
 
 | Layer | Responsibility | Location |
 |-------|----------------|----------|
-| **Agent** | Reasoning, planning, task decomposition, memory | `src/ai/agent/` |
-| **Tool / Workflow** | Domain operations, validation, permissions, orchestration (MCP) | `src/ai/tools/` |
-| **Backends** | Application APIs (database, GitHub, project) | `src/ai/backends/` |
+| **Agent** | Reasoning, planning, task decomposition, memory | `src/data/agent/` |
+| **Tool / Workflow** | Domain operations, validation, permissions, orchestration (MCP) | `src/data/tools/` |
+| **Backends** | Application APIs (database, GitHub, project) | `src/data/backends/` |
 
 ### AI subsystem highlights
 - `agent` — a configurable reasoning unit (config + planner + memory + tools).

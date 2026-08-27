@@ -8,7 +8,6 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-
 # Dependency paths
 set(GLFW_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw")
 set(IMGUI_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/imgui")
@@ -38,7 +37,7 @@ if(NOT EXISTS "${GLAZE_PATH}/CMakeLists.txt")
     message(FATAL_ERROR "Missing vendored dependency: external/glaze")
 endif()
 if(NOT EXISTS "${LIBPQXX_PATH}/CMakeLists.txt")
-    message(FATAL_ERROR "Missing vendored dependency: external/libpqxx")
+    message(WARNING "Vendored external/libpqxx not found; PostgreSQL backend disabled")
 endif()
 
 # Build GLFW as static
@@ -57,10 +56,25 @@ add_subdirectory("${DOCTEST_PATH}")
 set(glaze_DEVELOPER_MODE OFF CACHE BOOL "" FORCE)
 add_subdirectory("${GLAZE_PATH}")
 
-# libpqxx (PostgreSQL C++ client) - vendored. Defines the pqxx target.
-set(SKIP_BUILD_TEST ON CACHE BOOL "" FORCE)
-set(PQXX_LIBRARIES pqxx CACHE STRING "" FORCE)
-add_subdirectory("${LIBPQXX_PATH}")
+# libpqxx (PostgreSQL C++ client) - vendored. Only enabled when the PostgreSQL
+# client library (libpq) is available on the system. When it is not found the
+# app still builds and runs using the in-memory repository fallback.
+option(TF_ENABLE_POSTGRES "Build the PostgreSQL repository backend (requires libpq)" ON)
+set(TF_POSTGRES_ENABLED OFF)
+if(TF_ENABLE_POSTGRES AND EXISTS "${LIBPQXX_PATH}/CMakeLists.txt")
+    find_package(PostgreSQL QUIET)
+    if(PostgreSQL_FOUND)
+        set(SKIP_BUILD_TEST ON CACHE BOOL "" FORCE)
+        set(PQXX_LIBRARIES pqxx CACHE STRING "" FORCE)
+        add_subdirectory("${LIBPQXX_PATH}")
+        set(TF_POSTGRES_ENABLED ON)
+        message(STATUS "PostgreSQL backend enabled (libpqxx)")
+    else()
+        message(STATUS "PostgreSQL client (libpq) not found; using in-memory repository fallback")
+    endif()
+else()
+    message(STATUS "PostgreSQL backend disabled; using in-memory repository fallback")
+endif()
 
 # GLAD static lib
 add_library(glad STATIC
@@ -97,6 +111,12 @@ file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
 
+# The PostgreSQL repository implementation is only compiled when the backend
+# is enabled; otherwise the in-memory fallback is used.
+if(NOT TF_POSTGRES_ENABLED)
+    list(FILTER APP_SOURCES EXCLUDE REGEX ".*/repository/postgres_repository\\.cpp$")
+endif()
+
 add_executable(test ${APP_SOURCES})
 
 target_include_directories(test PRIVATE
@@ -115,8 +135,13 @@ target_link_libraries(test PRIVATE
     glad
     doctest::doctest
     glaze::glaze
-    pqxx
 )
+
+# PostgreSQL backend (optional): link pqxx and define the enabling macro.
+if(TF_POSTGRES_ENABLED)
+    target_link_libraries(test PRIVATE pqxx)
+    target_compile_definitions(test PRIVATE TF_POSTGRES_ENABLED=1)
+endif()
 
 # Glaze requires a conformant preprocessor on MSVC
 if(MSVC)

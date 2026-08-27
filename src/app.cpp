@@ -1,6 +1,6 @@
 #include "app.h"
 #include "features/agent_service.h"
-#include "features/repository/repository_provider.h"
+#include "repository/repository_provider.h"
 #include "profiler.h"
 
 app::app()
@@ -23,7 +23,6 @@ void app::run()
 
 void app::init()
 {
-	PROFILE_FUNCTION();
 	std::print("Init..");
 	{
 		PROFILE_SCOPE("repository.start");

@@ -1,8 +1,10 @@
 #include "agent_service.h"
-#include "../ai/agent/agent_registry.h"
-#include "repository/i_repository.h"
-#include "repository/repository_provider.h"
+#include "agent_export.h"
+#include "../data/agent/agent_registry.h"
+#include "../repository/i_repository.h"
+#include "../repository/repository_provider.h"
 #include <algorithm>
+#include <fstream>
 
 namespace features
 {
@@ -103,5 +105,27 @@ std::string agent_service::run(const std::string &name, const std::string &goal)
 	std::string transcript = a->handle(goal);
 	persist(a); // memory changed — persist the new history
 	return transcript;
+}
+
+bool agent_service::export_setup(const std::string &path, std::string &error) const
+{
+	export_document doc = build_export_document();
+	std::string json = export_document_to_json(doc, error);
+	if (!error.empty())
+		return false;
+
+	std::ofstream out(path, std::ios::binary | std::ios::trunc);
+	if (!out)
+	{
+		error = "failed to open '" + path + "' for writing";
+		return false;
+	}
+	out << json;
+	if (!out)
+	{
+		error = "failed to write '" + path + "'";
+		return false;
+	}
+	return true;
 }
 } // namespace features

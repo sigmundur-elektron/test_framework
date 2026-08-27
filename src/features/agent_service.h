@@ -1,6 +1,6 @@
 #pragma once
-#include "../ai/agent/agent_config.h"
-#include "../ai/agent/planner.h"
+#include "../data/agent/agent_config.h"
+#include "../data/agent/planner.h"
 #include <string>
 #include <vector>
 
@@ -35,6 +35,11 @@ class agent_service
 	// --- Planner / execution ---
 	std::vector<plan_step> preview(const std::string &name, const std::string &goal) const;
 	std::string run(const std::string &name, const std::string &goal);
+
+	// --- Export ---
+	/// Writes a portable JSON export (schema "tf.agent-export") of the whole
+	/// agent setup to 'path'. Returns false and populates 'error' on failure.
+	bool export_setup(const std::string &path, std::string &error) const;
 
   private:
 	agent_service() = default;

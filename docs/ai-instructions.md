@@ -11,7 +11,7 @@ graph TD
     B -->|application APIs| E["Project"]
 
 
-src/ai/
+src/data/
 ├─ agent/
 │  ├─ agent.h / agent.cpp            // top-level orchestrator (lifecycle)
 │  ├─ planner.h                      // task decomposition / reasoning

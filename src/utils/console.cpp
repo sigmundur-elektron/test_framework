@@ -1,4 +1,5 @@
 #include "console.h"
+#include "../features/log_service.h"
 #include <algorithm>
 #include <chrono>
 #include <iterator>
@@ -11,6 +12,9 @@ void console::add_tagged_line(const char *_tag, std::string _msg, ...)
 {
 	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 	text_buffer.emplace_back(std::string{_tag + _msg.insert(0, " : ") + "\n"}.c_str());
+	// Persist through the features layer (never touch the repository directly).
+	features::log_service::instance().append(_tag ? _tag : "",
+											 text_buffer.back());
 }
 
 void console::render(const char *title, bool *p_open)

@@ -1,8 +1,8 @@
 #pragma once
 #include <doctest/doctest.h>
-#include "../src/ai/agent/agent_registry.h"
-#include "../src/ai/tools/agent_call_tool.h"
-#include "../src/ai/tools/tool_registry.h"
+#include "../src/data/agent/agent_registry.h"
+#include "../src/data/tools/agent_call_tool.h"
+#include "../src/data/tools/tool_registry.h"
 #include <memory>
 
 TEST_CASE("[ai] agent_registry creates and finds agents at runtime")

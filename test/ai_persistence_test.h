@@ -1,7 +1,7 @@
 #pragma once
 #include <doctest/doctest.h>
-#include "../src/ai/agent/agent_registry.h"
-#include "../src/ai/persistence/ai_persistence.h"
+#include "../src/data/agent/agent_registry.h"
+#include "../src/data/persistence/ai_persistence.h"
 #include <cstdio>
 
 TEST_CASE("[ai] setup saves and loads agents + memory")

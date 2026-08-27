@@ -1,5 +1,5 @@
 #include "planner_panel.h"
-#include "../ai/agent/agent.h"
+#include "../data/agent/agent.h"
 #include "../features/agent_service.h"
 #include "../include/imgui.h"
 #include <string>
@@ -41,6 +41,7 @@ void show_planner_panel(bool *p_open)
 	}
 
 	agent *active = agents[selected];
+	const std::string active_name = active->config().name;
 
 	// --- Goal input ---
 	static char goal[256] = "";
@@ -49,7 +50,7 @@ void show_planner_panel(bool *p_open)
 
 	// --- Plan preview (non-mutating) ---
 	ImGui::SeparatorText("Plan preview");
-	const std::vector<plan_step> steps = active->preview(goal);
+	const std::vector<plan_step> steps = service.preview(active_name, goal);
 	if (steps.empty())
 	{
 		ImGui::TextDisabled("(planner produced no steps yet)");
@@ -81,7 +82,7 @@ void show_planner_panel(bool *p_open)
 	ImGui::SeparatorText("Run");
 	static std::string transcript;
 	if (ImGui::Button("Run goal"))
-		transcript = active->handle(goal);
+		transcript = service.run(active_name, goal);
 	ImGui::SameLine();
 	if (ImGui::Button("Clear"))
 	{
