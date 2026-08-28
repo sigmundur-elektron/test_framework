@@ -1,14 +1,15 @@
 #define DOCTEST_CONFIG_IMPLEMENT
-#include "../test/factorial_test.h"
-#include "../test/read_file_tool_test.h"
 #include "../test/agent_a2a_test.h"
-#include "../test/ai_persistence_test.h"
 #include "../test/agent_export_test.h"
 #include "../test/agent_template_test.h"
+#include "../test/ai_persistence_test.h"
+#include "../test/factorial_test.h"
 #include "../test/mvp_gaps_test.h"
-#include <doctest/doctest.h>
+#include "../test/permissions_test.h"
+#include "../test/read_file_tool_test.h"
 #include "app.h"
 #include <cstring>
+#include <doctest/doctest.h>
 
 // Compile-time default (handy while debugging). Overridden at runtime by the
 // -t / --test command-line flag.

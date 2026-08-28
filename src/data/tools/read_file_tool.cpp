@@ -18,7 +18,8 @@ std::string read_file_tool::schema() const
 })";
 }
 
-std::expected<tool_result, std::string> read_file_tool::execute(const std::string &json_args)
+std::expected<tool_result, std::string> read_file_tool::execute(const std::string &json_args,
+																const permissions &perms)
 {
 	// NOTE: minimal extraction; swap for a real JSON parser (e.g. nlohmann/json).
 	const std::string key = "\"path\"";
@@ -33,7 +34,7 @@ std::expected<tool_result, std::string> read_file_tool::execute(const std::strin
 
 	std::string path = json_args.substr(start + 1, end - start - 1);
 
-	if (!_perms.allowed(permissions::scope::read_project))
+	if (!perms.allowed(permissions::scope::read_project))
 		return std::unexpected("permission denied: read_project");
 
 	tool_result result;

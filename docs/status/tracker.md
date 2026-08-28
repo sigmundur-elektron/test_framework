@@ -24,7 +24,6 @@ Phase maps to the [MVP roadmap](../plans/mvp-roadmap.md).
 | T-006 | Coordination: exercise A2A via `agent_call_tool` between two agents | 3 | P0 | — | 2025-02-14 |
 | T-009 | Consumer contract: document how an "open code" agent runs the export (Q11–Q13) | 5 | P0 | — | 2025-02-14 |
 | T-010 | Import/round-trip support (two-way export — promoted to MVP per D-004, Q12) | 5 | P0 | — | 2025-02-16 |
-| T-011 | Permissions wired from `agent_config` → tool execution | 2 | P1 | — | 2025-02-14 |
 | T-015 | Define + implement MVP tool set: agent CRUD tools + git/gitlab tool (Q5) | 2 | P0 | — | 2025-02-16 |
 | T-016 | Make `itool::schema` a serializable struct instead of a raw string (Q6) | 2 | P1 | — | 2025-02-16 |
 | T-017 | Implement `mcp_client` transport (handshake + tool discovery) (Q7) | 2 | P0 | — | 2025-02-16 |
@@ -44,6 +43,10 @@ Phase maps to the [MVP roadmap](../plans/mvp-roadmap.md).
 | T-037 | `/plan`'s two-round audit cap fired on an unambiguous request. Its rationale assumes repeated DEBT means an unclear ask; it also catches "author keeps getting facts wrong", which needs a different response. Distinguish the two, or raise the cap for factual defects | 0 | P2 | — | 2026-08-28 |
 | T-038 | `@spec-auditor` round 2 left most Context/Out-of-scope `file:line` citations unverified (its own Gaps section). Consider requiring the auditor to re-verify citations it checked in an earlier round | 0 | P2 | — | 2026-08-28 |
 | T-039 | Observed: a live session executed a **stale** `/run` template referencing the deleted `scripts/gate.ps1`. opencode caches `.opencode/` at startup, so renaming or porting a script leaves running sessions invoking a path that no longer exists. Commands should resolve the gate via one indirection, or the session must be restarted after any `.opencode/` change | 0 | P1 | — | 2026-08-28 |
+| T-040 | Four audit rounds on `feat/permissions-enforce` hit one defect class: acceptance criteria naming a command whose output cannot distinguish pass from fail (`git diff` with no revision; a format step over an empty file set; a row "changed" observed via `--name-only`). Add a `spec-format` rule — every criterion must state what the verifying command prints **when it fails** — and have `@spec-auditor` check it | 0 | P1 | — | 2026-08-28 |
+| T-041 | `.opencode/skills/quality-gate/SKILL.md:24` documents `--scope branch` as covering everything changed vs `origin/main`. This repo's base branch is `master`; there is no `origin/main`, so the pre-PR format scope is broken. Verify what `scripts/gate.py` actually uses and correct the doc, the script, or both | 0 | P1 | — | 2026-08-28 |
+| T-042 | A12 of `.spec/feat-permissions-enforce/spec.md` requires a `static_assert` "pinning the count" of `permissions::scope`. Not achievable in C++23 — enum cardinality needs reflection (C++26). Ordinal asserts catch rename/reorder/insert/remove but not an appended enumerator, leaving the three enum-keyed tables (`agent_export.cpp`, `agent_template.cpp`, `ai_setup.h`) exposed to silent divergence. Amend the criterion via `@spec-auditor`, or add a runtime round-trip test over all scopes instead | 2 | P2 | — | 2026-08-28 |
+| T-043 | `/run` forbids the implementer from committing, but `.spec/feat-permissions-enforce/spec.md:133-135` requires committing to evaluate A8-A12 against `origin/master...HEAD`. The two cannot both hold; the verifier's substitute (`git diff origin/master`) conflates prior branch commits with the session's own work, which produced a false "out-of-scope files" finding. Decide which side gives | 0 | P1 | — | 2026-08-28 |
 
 ## In Progress
 
@@ -69,6 +72,8 @@ Phase maps to the [MVP roadmap](../plans/mvp-roadmap.md).
 | T-019 | spec-flow Phase 1: `scripts/gate.py`, `quality-gate` + `evidence-report` skills, `/gate` command, `opencode.json` | 0 | opencode | 2026-08-28 |
 | T-026 | spec-flow model routing wired: opus-5 ceiling (`spec-auditor`, `plan`), sonnet-5 floor (`verifier`, `explore`, `small_model`) | 0 | opencode | 2026-08-28 |
 | T-027 | spec-flow Phase 2: `spec-format` skill, `.spec/<branch-slug>/`, `/plan` + `/run`, `spec-auditor` + `verifier` agents (D-006) | 0 | opencode | 2026-08-28 |
+| T-011 | Permissions wired from `agent_config` → tool execution (D-008; `permissions` gains a grant set, `itool::execute` takes the caller's `permissions`, `agent::execute_step` resolves it from `agent_config::grants`) | 2 | opencode | 2026-08-28 |
 | T-028 | Working rules restated in `docs/ai-instructions.md` so they load in every session | 0 | opencode | 2026-08-28 |
+| T-044 | `@verifier`'s `bash` allowlist omitted `python scripts/check_opencode.py`, which acceptance criterion A10 requires it to run — so the criterion was unverifiable by construction. Fixed; a criterion naming a command must be checked against the permissions of the agent expected to run it | 0 | opencode | 2026-08-28 |
 | T-032 | `scripts/check_opencode.py` — structural validation of `.opencode/` (skill name/dir match, valid permission keys, required descriptions); verified against 7 planted defects | 0 | opencode | 2026-08-28 |
 | T-036 | Port `gate.ps1`/`check-opencode.ps1` to Python; schema-driven validation, real YAML parsing, fail-fast on configure, V2 plural `.opencode/` layout (D-007) | 0 | opencode | 2026-08-28 |

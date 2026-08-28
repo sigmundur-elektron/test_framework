@@ -3,7 +3,7 @@
 #include <memory>
 
 agent::agent(agent_config config)
-	: _config(std::move(config)), _tools(tool_registry::get_instance())
+  : _config(std::move(config)), _tools(tool_registry::get_instance())
 {
 }
 
@@ -42,7 +42,9 @@ tool_result agent::execute_step(const plan_step &step)
 	if (!tool)
 		return {false, "unknown tool: " + step.tool_name};
 
-	auto result = tool->execute(step.json_args);
+	// The tool is gated against THIS agent's grants, resolved per dispatch, so
+	// an agent cannot borrow authority from whoever registered the tool.
+	auto result = tool->execute(step.json_args, permissions{_config.grants});
 	if (!result)
 		return {false, result.error()};
 

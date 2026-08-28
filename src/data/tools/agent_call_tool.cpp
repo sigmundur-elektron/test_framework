@@ -15,7 +15,7 @@ namespace
 			return {};
 		return json.substr(start + 1, end - start - 1);
 	}
-}
+} // namespace
 
 std::string agent_call_tool::name() const
 {
@@ -38,7 +38,8 @@ std::string agent_call_tool::schema() const
 })";
 }
 
-std::expected<tool_result, std::string> agent_call_tool::execute(const std::string &json_args)
+std::expected<tool_result, std::string> agent_call_tool::execute(const std::string &json_args,
+																 const permissions & /*perms*/)
 {
 	const std::string target = extract(json_args, "agent");
 	const std::string goal = extract(json_args, "goal");

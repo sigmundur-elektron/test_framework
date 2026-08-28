@@ -27,11 +27,17 @@ struct agent
 	const memory &get_memory() const { return _memory; }
 	memory &mutable_memory() { return _memory; } // used for save/load
 
+	/// Dispatch a single planned step against this agent's grants.
+	///
+	/// Public because it is the only observable seam for permission
+	/// enforcement: the alternative route, handle(), dispatches steps from
+	/// planner::plan, which is still a stub returning {} (T-005). Treat this as
+	/// a test seam; production flow should go through handle().
+	tool_result execute_step(const plan_step &step);
+
   private:
 	agent_config _config;
 	tool_registry &_tools;
 	planner _planner;
 	memory _memory;
-
-	tool_result execute_step(const plan_step &step);
 };

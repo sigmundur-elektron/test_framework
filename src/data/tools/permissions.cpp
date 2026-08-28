@@ -1,7 +1,9 @@
 #include "permissions.h"
+#include <algorithm>
 
-bool permissions::allowed(scope /*s*/) const
+bool permissions::allowed(scope s) const
 {
-	// TODO: replace with real policy. Default: read allowed, write gated.
-	return true;
+	// Flat allow-list, deny by default. No wildcards, no hierarchy, no
+	// deny-entries: a scope is permitted only if it was explicitly granted.
+	return std::find(_granted.begin(), _granted.end(), s) != _granted.end();
 }

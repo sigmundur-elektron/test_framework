@@ -55,10 +55,10 @@ Run it after editing anything under `.opencode/` or `opencode.json`, and
 
 ```
 build   exit 0    0 first-party warnings   (incremental; see T-020 for clean-build warnings)
-test    exit 0    test cases: 22 | 22 passed | 0 failed | 0 skipped
-                  assertions: 97 | 93 passed | 4 failed
-                  may_fail assertions: 4
-format  44 of 80 tracked files under src/ and test/ are non-conformant (T-021)
+test    exit 0    test cases: 26 | 26 passed | 0 failed | 0 skipped
+                  assertions: 115 | 112 passed | 3 failed
+                  may_fail assertions: 3
+format  38 of 80 tracked files under src/ and test/ are non-conformant (T-021)
 ```
 
 Quote this baseline in the **Baseline attribution** section of any evidence
@@ -77,12 +77,13 @@ report. If your run produces different numbers, that difference is the finding
   the include list when test counts look wrong. (See T-022.)
 - **`test.exe` is a GUI app.** Without `--test` (or `-t`) it opens a GLFW/ImGui
   window and blocks. Always pass `--test`.
-- **4 assertions fail by design.** `test/mvp_gaps_test.h` marks known MVP gaps
+- **3 assertions fail by design.** `test/mvp_gaps_test.h` marks known MVP gaps
   with doctest's `may_fail`, so they print `ERROR:` followed by
   `Allowed to fail so marking it as not failed`, and the run still exits 0.
-  The gate reports this as `may_fail assertions: 4`. **If that count changes,
+  The gate reports this as `may_fail assertions: 3`. **If that count changes,
   say so explicitly** — a drop can mean a gap was closed, or that someone
-  deleted the marker.
+  deleted the marker. It was 4 until T-011 closed the permissions gap; the
+  `[mvp-gap][permissions]` case now passes without a waiver.
 - **Exit code 0 alone is not a pass.** Because of the above, always read the
   doctest summary lines, not just the exit code.
 - **`clang-tidy` is not part of the gate.** There is no `.clang-tidy` config and

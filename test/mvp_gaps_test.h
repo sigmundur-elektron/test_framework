@@ -1,12 +1,12 @@
 #pragma once
-#include <doctest/doctest.h>
 #include "../src/data/agent/agent.h"
 #include "../src/data/agent/agent_registry.h"
-#include "../src/data/agent/planner.h"
 #include "../src/data/agent/memory.h"
-#include "../src/data/tools/permissions.h"
+#include "../src/data/agent/planner.h"
 #include "../src/data/backends/github_api.h"
+#include "../src/data/tools/permissions.h"
 #include "../src/features/agent_export.h"
+#include <doctest/doctest.h>
 #include <glaze/glaze.hpp>
 
 // These tests deliberately FAIL until the guarded MVP features are implemented.
@@ -24,13 +24,16 @@ TEST_CASE("[mvp-gap][planner] planner produces multi-step plans" * doctest::may_
 				  "planner::plan is still a stub (Q1/T-005) — returns no steps");
 }
 
-// --- Q8 / T-011: permissions are not wired to agent_config (always allow). ---
-TEST_CASE("[mvp-gap][permissions] denied scope is actually denied" * doctest::may_fail())
+// --- Q8 / T-011 (CLOSED): permissions are wired from agent_config. ---
+// This test PASSES and closes Q8: a default-constructed permissions grants
+// nothing, so an ungranted scope is denied. Enforcement across the agent ->
+// tool boundary is covered in test/permissions_test.h.
+TEST_CASE("[mvp-gap][permissions] denied scope is actually denied")
 {
 	permissions perms;
-	// Once policy is wired, an ungranted write scope should be denied.
+	// Policy is wired: an ungranted write scope is denied.
 	CHECK_MESSAGE(!perms.allowed(permissions::scope::write_database),
-				  "permissions::allowed is a stub (Q8/T-011) — always returns true");
+				  "permissions::allowed must deny scopes that were never granted");
 }
 
 // --- Q7 / T-017: mcp_client transport is scaffolding only. ---

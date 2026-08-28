@@ -1,7 +1,7 @@
 #pragma once
-#include <doctest/doctest.h>
 #include "../src/data/tools/read_file_tool.h"
 #include "../src/data/tools/tool_registry.h"
+#include <doctest/doctest.h>
 #include <fstream>
 #include <memory>
 
@@ -16,7 +16,7 @@ TEST_CASE("[ai] read_file_tool exposes name and schema")
 TEST_CASE("[ai] read_file_tool fails when path arg is missing")
 {
 	read_file_tool tool;
-	auto result = tool.execute("{}");
+	auto result = tool.execute("{}", permissions{{permissions::scope::read_project}});
 	CHECK_FALSE(result.has_value());
 	CHECK(result.error() == "missing required argument: path");
 }
@@ -30,7 +30,8 @@ TEST_CASE("[ai] read_file_tool reads an existing file")
 	}
 
 	read_file_tool tool;
-	auto result = tool.execute(R"({ "path": "read_file_tool_test.tmp" })");
+	auto result = tool.execute(R"({ "path": "read_file_tool_test.tmp" })",
+							   permissions{{permissions::scope::read_project}});
 
 	REQUIRE(result.has_value());
 	CHECK(result->success);

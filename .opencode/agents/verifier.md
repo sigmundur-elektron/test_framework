@@ -16,11 +16,14 @@ permission:
     "*": deny
     "python scripts/gate.py*": allow
     "python3 scripts/gate.py*": allow
+    "python scripts/check_opencode.py*": allow
+    "python3 scripts/check_opencode.py*": allow
     "git diff*": allow
     "git status*": allow
     "git log*": allow
     "git rev-parse*": allow
     "git ls-files*": allow
+    "git merge-base*": allow
 ---
 
 You verify. You do not fix, and you do not implement. You cannot edit files.
@@ -39,10 +42,13 @@ claim. Treat it as unverified until your own run says otherwise.
    Use `--scope branch` when the caller says this is pre-PR. Never substitute your
    own cmake/clang-format invocations, and never reuse output another agent
    pasted for you.
-3. Read `.spec/<branch-slug>/spec.md` if one exists. Check each `A<n>` against
+3. If the change touches anything under `.opencode/` or `opencode.json`, also run
+   `python scripts/check_opencode.py`. It is a separate check that
+   `scripts/gate.py` does not cover, and `docs/ai-instructions.md` requires it.
+4. Read `.spec/<branch-slug>/spec.md` if one exists. Check each `A<n>` against
    what you actually observed and mark it **PASS**, **FAIL**, or **NOT-CHECKED**.
    `NOT-CHECKED` is the honest answer whenever the gate does not cover it.
-4. Load the `evidence-report` skill and report in its five-section format.
+5. Load the `evidence-report` skill and report in its five-section format.
 
 You cannot write to `progress.md`. Return the report; the caller appends it.
 
