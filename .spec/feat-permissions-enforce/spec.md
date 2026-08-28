@@ -1,8 +1,8 @@
 ---
 branch: feat/permissions-enforce
 tier: L
-status: draft
-decision: D-008 (required before /run; not yet written)
+status: audited
+decision: D-008
 last-updated: 2026-08-28
 ---
 
@@ -121,15 +121,20 @@ A3. The existing case `[mvp-gap][permissions] denied scope is actually denied`
     — verified by: `python scripts/gate.py`; the summary field
     `may_fail assertions:` drops from **4** to **3**
 
-A4. An agent whose `grants` omit `read_project`, calling
-    `agent::execute_step` with a step naming `read_file_tool`, receives
+A4. The tool must be registered first: `read_file_tool` is registered only by
+    `agent::init()` (`agent.cpp:12`) into the process-wide `tool_registry`
+    singleton, so each case calls `init()` before `execute_step`.
+    An agent whose `grants` omit `read_project`, calling
+    `agent::execute_step` with a step whose `tool_name` is the literal string
+    `"read_file"` (`read_file_tool.cpp:5`; the registry keys on `tool->name()`
+    at `tool_registry.cpp:7` and `agent.cpp:41` looks it up), receives
     `tool_result.success == false` and a message naming the denied scope, and the
     target file is not read.
     — verified by: doctest case `[permissions] ungranted tool call is denied`
     in `test/permissions_test.h`
 
 A5. An agent whose `grants` include `read_project`, calling
-    `agent::execute_step` with the same step, receives
+    `agent::execute_step` with the same `"read_file"` step, receives
     `tool_result.success == true` and output containing the file contents.
     — verified by: doctest case `[permissions] granted tool call succeeds`
     in `test/permissions_test.h`

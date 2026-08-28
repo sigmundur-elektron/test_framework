@@ -10,6 +10,90 @@ Append one entry per non-trivial decision. Newest at top.
 
 ---
 
+## D-008 — Permissions reach tools as a parameter on `itool::execute`; `agent::execute_step` becomes public
+**Status:** accepted
+**Date:** 2026-08-28
+
+**Context.** `permissions::allowed` ignores its argument and returns `true`
+(`permissions.cpp:3-7`). `permissions` (`permissions.h:5-18`) has no member
+state, so there is nowhere for a grant list to live. `agent_config::grants`
+(`agent_config.h:12`) already holds `std::vector<permissions::scope>` per agent
+and already round-trips through the export document (`agent_export.cpp:83-88`)
+and disk persistence (`ai_setup.h:25-33`) — the data exists, nothing reads it.
+
+The blocker is structural: `itool::execute` (`itool.h:27`) takes only
+`const std::string &json_args`. There is no caller-identity parameter, so a tool
+cannot know whose grants apply. `read_file_tool` works around this with a
+default-constructed member `permissions _perms;` (`read_file_tool.h:14`) that is
+connected to nothing. `agent::execute_step` (`agent.cpp:39-50`) is the sole
+runtime tool-invocation site and the only place holding both `_config.grants` and
+the `tool->execute` call — and it is `private` (`agent.h:36`).
+
+Task: T-011. Specification: `.spec/feat-permissions-enforce/spec.md`.
+
+**Decision.**
+
+1. **`permissions` gains state.** A grant set plus a constructor taking
+   `std::vector<permissions::scope>`. Default construction grants nothing, so
+   `allowed()` denies by default.
+2. **Grants reach tools as a parameter.** `itool::execute` becomes
+   `execute(const std::string &json_args, const permissions &perms)`. Each tool
+   gates itself against the caller's grants, matching the intent already stated
+   at `itool.h:26`. `read_file_tool::_perms` is deleted.
+3. **`agent::execute_step` moves to the public section** of `agent`. It is the
+   integration point and therefore the test seam; leaving it private makes the
+   behaviour unobservable, because the only public route is `agent::handle`,
+   which dispatches from `planner::plan` — a stub returning `{}` (T-005).
+4. **The `scope` enum and `agent_config::grants` are frozen.** Their names, count
+   and order are load-bearing in three independent tables
+   (`agent_export.cpp:11-29`, `agent_template.cpp:16-25`, `ai_setup.h:25-33`).
+   Adding a member to `permissions` is export- and persistence-neutral.
+5. **A2A calls stay ungated** for now. No A2A scope exists, and adding one would
+   break all three tables. `agent_config::peer_agents` continues to govern them.
+   Separate task.
+
+**Rationale.**
+
+- Rejected *gating centrally in `execute_step`* via a tool-name → scope table:
+  the mapping would live outside the tool that knows its own requirements and
+  drift silently as tools are added. It would also leave the inert `_perms`
+  member in place as a trap.
+- Rejected *giving `permissions` state and changing nothing else*: the smallest
+  diff, and it would make the `may_fail` marker pass — while
+  `read_file_tool`'s default-constructed `_perms` began denying `read_project`
+  and broke `test/read_file_tool_test.h:33`. It would trade a visible gap for a
+  hidden one.
+- Rejected *passing an `agent` or caller context*: that couples the tool layer to
+  the agent layer, inverting the dependency direction in the architecture. The
+  resolved grant set keeps tools ignorant of agents.
+- Rejected *reaching `execute_step` through `handle`*: it depends on
+  `planner::plan`, an open gap (T-005). Acceptance would be untestable until an
+  unrelated task landed.
+
+**Impact.**
+- Signature change touches `itool.h`, `read_file_tool.h/.cpp`,
+  `agent_call_tool.h/.cpp`, `agent.h`, `agent.cpp`, and four existing test call
+  sites: `test/read_file_tool_test.h:19,33` and `test/agent_a2a_test.h:32,36`.
+- New `test/permissions_test.h`, which must be added by hand to `src/main.cpp`
+  (T-022) or its cases silently never run.
+- `test/mvp_gaps_test.h:28-34` loses its `* doctest::may_fail()` decorator; the
+  gate's `may_fail assertions` baseline moves 4 → 3.
+- Export and persistence formats unchanged.
+
+**Consequences.** Deny-by-default is a behaviour change: any agent with empty
+`grants` loses tool access it silently had, including persisted agents. Widening
+`agent`'s public surface exposes `execute_step` to UI code, not only to tests.
+Every future `itool` implementer must accept the new parameter — including
+`mcp_client` when T-017 lands.
+
+**Provenance.** This SPEC went through two audit rounds. Round 1 returned five
+blocking defects; round 2 returned one — acceptance criteria naming
+`read_file_tool` where the registry key is the literal `"read_file"`
+(`read_file_tool.cpp:5`), which would have made A5 fail and **A4 pass for the
+wrong reason**. That defect is fixed and the SPEC is `audited`. See T-037: the
+audit loop's round cap halted on an unambiguous request, which was a flaw in the
+cap, not in the SPEC.
+
 ## D-007 — spec-flow tooling in Python; schema-driven validation; V2 `.opencode/` layout
 **Status:** accepted
 **Date:** 2026-08-28

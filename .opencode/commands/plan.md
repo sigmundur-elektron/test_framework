@@ -39,10 +39,24 @@ Current branch and working tree:
    - **PASS** → set `status: audited`, append the verdict to `progress.md`, and
      show me the SPEC path plus any nits.
    - **DEBT** → fix every blocking defect, append both the verdict and what you
-     changed to `progress.md`, then re-audit. **Maximum two rounds.** If it still
-     returns DEBT, stop and show me both verdicts — repeated DEBT usually means
-     the request itself is unclear, and that is mine to resolve, not yours to
-     paper over.
+     changed to `progress.md`, then re-audit. **Two rounds.**
+
+7. **Close the audit either way.** `/plan` always produces a SPEC. It does not
+   hand the work back because the loop did not converge.
+   - If DEBT remains after round 2, apply whatever fixes you can, set
+     `status: audited-with-debt`, and copy every unresolved defect **verbatim**
+     into `progress.md` under `## Known defects at audit close`. A SPEC carrying
+     two recorded defects is worth more than no SPEC.
+   - **The one exception:** if the auditor's defects say the *request* is
+     ambiguous rather than that the author got facts wrong, stop and ask me.
+     Wrong facts are yours to fix; an unclear ask is mine.
+   - Unwritten `D-NNN` entries, stubbed dependencies and open `T-NNN` are **not
+     blockers**. Plan around them, name them in Context or Risks, and say what
+     the implementer should do when they hit one.
+
+8. **Learn from it.** If the audit found a defect class you have now hit twice,
+   say so, and propose the rule or template change that would prevent a third.
+   Add it to `docs/status/tracker.md`.
 
 ## Rules
 
@@ -51,5 +65,10 @@ Current branch and working tree:
 - Do not run the gate here; there is nothing to verify yet.
 - Reference the relevant `T-NNN` from `docs/status/tracker.md` in the SPEC's
   Context. If this work has no task, say so — it may need one.
-- If the tier is L, remind me that it also needs a `D-NNN` entry in
-  `docs/notes/decisions.md`.
+- If the tier is L, note in the frontmatter which `D-NNN` should record the
+  design decision. Write it if you can; if you cannot, say so and carry on —
+  a missing decision record is a gap to report, not a gate to fail.
+- **Name the tool, function or symbol exactly as the code spells it.** Acceptance
+  criteria that name a registry key, a tool name or a test case must quote the
+  literal string from the source, with a `file:line`. A criterion that passes for
+  the wrong reason is worse than one that fails.

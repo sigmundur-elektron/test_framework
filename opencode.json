@@ -8,6 +8,8 @@
     "bash": {
       "*": "ask",
       "python scripts/gate.py*": "allow",
+      "pwsh -File scripts/gate.ps1*": "allow",
+      "pwsh -NoProfile -File scripts/gate.ps1*": "allow",
       "python3 scripts/gate.py*": "allow",
       "python scripts/check_opencode.py*": "allow",
       "python3 scripts/check_opencode.py*": "allow",

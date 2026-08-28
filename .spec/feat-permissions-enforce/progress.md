@@ -104,3 +104,41 @@ rationale did not apply. It assumes repeated DEBT means an unclear request; here
 the request was unambiguous and the repeats were two independent factual errors
 by the author. The cap conflates "the ask is unclear" with "the author keeps
 getting facts wrong", which want different responses. Raised as T-037.
+
+### Audit closed — status: audited (waiver recorded)
+
+Operator direction: process gates should not halt work. Stubs, unwritten
+decision records and open tasks are conditions to plan around, not blockers.
+The round-2 defect was applied rather than handed back:
+
+- A4/A5 now name the literal registry key `"read_file"` (`read_file_tool.cpp:5`,
+  keyed at `tool_registry.cpp:7`, looked up at `agent.cpp:41`) instead of
+  `read_file_tool`. Verified in source before editing.
+- A4 gained the registration precondition the auditor raised as a nit:
+  `read_file_tool` is registered only by `agent::init()` (`agent.cpp:12`) into
+  the process-wide `tool_registry` singleton, so each case must call `init()`
+  before `execute_step`.
+- **D-008 written** in `docs/notes/decisions.md`, covering the interface change
+  and the visibility change. Frontmatter no longer marks it outstanding.
+
+`status: draft` -> `audited`. No third audit round was run, so the two edits
+above are the author's own and carry no independent verdict. Recorded here
+rather than implied.
+
+### What the audit loop taught
+
+Two defect classes hit, both worth preventing rather than re-catching:
+
+1. **Acceptance criteria naming a symbol the code spells differently.** A4 would
+   have passed for the wrong reason. `/plan` now carries a rule: name the tool,
+   function or symbol exactly as the code spells it, quote the literal string,
+   cite `file:line`.
+2. **Acceptance criteria assuming reachability without checking it.** A4/A5
+   targeted a private method. Same root cause as (1) — asserting about code
+   without opening it.
+
+Harness changes made in response: `/plan` step 7 closes the audit either way
+(`audited-with-debt` + verbatim defect list) and stops only when the *request* is
+ambiguous; `/run` step 1 proceeds on `draft`/`audited-with-debt` with the defects
+listed, and treats unwritten `D-NNN` and stubbed dependencies as things to work
+around. T-037.
