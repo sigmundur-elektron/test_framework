@@ -88,8 +88,15 @@ To read the current values, open the file — do not memorise them.
   `DOCTEST_CONFIG_IMPLEMENT` and `#include`s each `test/*_test.h` by hand. A new
   test file that is not added to that include list silently never runs. Check
   the include list when test counts look wrong. (See T-022.)
-- **`test.exe` is a GUI app.** Without `--test` (or `-t`) it opens a GLFW/ImGui
-  window and blocks. Always pass `--test`.
+- **`test.exe` is a GUI app. Always pass `--test`.** `src/main.cpp` computes
+  `run_tests = testing || wants_tests(argv)` where `testing` is a compile-time
+  default (`src/main.cpp:16`). With `testing = false`, an unflagged run calls
+  `a.run()`, opens a GLFW/ImGui window and **blocks indefinitely** — verified by
+  running the binary with no arguments: no doctest output, still alive after 12s.
+  Never invoke it without `--test` from a script or an agent session.
+  Note the coupling: if `testing` is ever set back to `true`, the `||` can never
+  be false and the suite runs regardless of the flag, making the GUI
+  unreachable. The gate always passes `--test`, so it is correct either way.
 - **Some assertions fail by design.** `test/mvp_gaps_test.h` marks known MVP gaps
   with doctest's `may_fail`, so they print `ERROR:` followed by
   `Allowed to fail so marking it as not failed`, and the run still exits 0.
