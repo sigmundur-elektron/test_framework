@@ -12,7 +12,7 @@ Working tree state:
 Steps:
 
 1. Load the `quality-gate` skill.
-2. Run `pwsh -File scripts/gate.ps1 $ARGUMENTS`. Run it — do not describe what it
+2. Run `python scripts/gate.py $ARGUMENTS`. Run it — do not describe what it
    would do, and do not substitute your own cmake/clang-format invocations.
 3. Load the `evidence-report` skill and report in its five-section format. Paste
    the script's `GATE SUMMARY` block verbatim under Evidence.

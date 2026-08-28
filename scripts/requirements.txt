@@ -1,0 +1,10 @@
+# spec-flow tooling dependencies (scripts/ only — the C++ build needs none of this)
+#
+#   python -m pip install -r scripts/requirements.txt
+#
+# check_opencode.py refuses to run without these rather than silently doing a
+# worse job: an approximate validator that prints OK is worse than no validator.
+# gate.py needs neither and runs on a bare Python 3.11+.
+
+PyYAML>=6.0
+jsonschema>=4.20

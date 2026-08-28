@@ -3,10 +3,14 @@
   "instructions": [
     "docs/ai-instructions.md"
   ],
+  "small_model": "github-copilot/claude-sonnet-5",
   "permission": {
     "bash": {
       "*": "ask",
-      "pwsh -File scripts/gate.ps1*": "allow",
+      "python scripts/gate.py*": "allow",
+      "python3 scripts/gate.py*": "allow",
+      "python scripts/check_opencode.py*": "allow",
+      "python3 scripts/check_opencode.py*": "allow",
       "git status*": "allow",
       "git diff*": "allow",
       "git log*": "allow",
@@ -15,5 +19,13 @@
       "git ls-files*": "allow"
     },
     "external_directory": "deny"
+  },
+  "agent": {
+    "plan": {
+      "model": "github-copilot/claude-opus-5"
+    },
+    "explore": {
+      "model": "github-copilot/claude-sonnet-5"
+    }
   }
 }

@@ -85,7 +85,7 @@
   <div class="badges">
     <span class="badge ok">status: accepted</span>
     <span class="badge ok">phase 1: implemented — T&#8209;019</span>
-    <span class="badge a">phase 2: planned — T&#8209;027</span>
+    <span class="badge ok">phase 2: implemented — T&#8209;027</span>
     <span class="badge">scope: project&#8209;local</span>
     <span class="badge">2026&#8209;08&#8209;28</span>
   </div>
@@ -95,8 +95,8 @@
 MoAI&#8209;ADK is a 4,400&#8209;commit Go binary that wraps Claude Code with 12 agents, 18+ skills, an MCP
 server, a web console, multi&#8209;LLM cost routing and a five&#8209;column multi&#8209;terminal Kanban board.
 Most of that machinery works around limitations opencode does not have. What is genuinely worth
-stealing fits in <b>one PowerShell script, two skills, one command and a config file</b>.
-Phase 1 of that is now in this repo and verified against a real build.
+stealing fits in <b>one PowerShell script, three skills, three commands, two subagents and a config
+file</b>. All of it is now in this repo, with the gate verified against a real build.
 </p>
 
 <nav class="toc">
@@ -106,7 +106,7 @@ Phase 1 of that is now in this repo and verified against a real build.
     <li><a href="#mapping">Concept → opencode primitive</a></li>
     <li><a href="#gate">The real gate <span class="tag g">measured</span></a></li>
     <li><a href="#shipped">What Phase 1 ships</a></li>
-    <li><a href="#phase2">Phase 2 design</a></li>
+    <li><a href="#phase2">What Phase 2 ships</a></li>
     <li><a href="#limits">Limitations → tracker</a></li>
     <li><a href="#decisions">Decisions on record</a></li>
   </ol>
@@ -257,7 +257,7 @@ Both are wrong for this repo. What follows was established by running it.
 </table>
 
 <h3>Verified baseline — 2026&#8209;08&#8209;28, <code>x64&#8209;debug</code></h3>
-<pre><code>$ pwsh -File scripts/gate.ps1
+<pre><code>$ python scripts/gate.py
 
 === GATE SUMMARY ==================================================
 PASS   configure  exit 0    skipped: CMakeCache.txt present
@@ -280,16 +280,20 @@ finding on its first run against real code — which is the entire point.
 <h2 id="shipped"><span class="n">05</span>What Phase 1 ships <span class="tag g">T&#8209;019</span></h2>
 
 <pre><code>scripts/
-  gate.ps1                      the gate. Locates VS via vswhere, enters the dev shell,
-                                configures/builds/tests/format-checks, prints a summary
-                                with an exit code per step, exits non-zero on any failure.
+  gate.py                      the gate. Per-platform toolchain probe, then
+                                configure / build / test / format-check. One exit code per
+                                step; a failed configure stops the run outright.
+  check_opencode.py             validates the harness against the vendored opencode schema
+  refresh_schema.py             re-vendors https://opencode.ai/config.json
+  requirements.txt              pyyaml + jsonschema (scripts only; the C++ build needs none)
+  schema/                       the vendored schema, committed so diffs are reviewable
 
 .opencode/
   skills/
     quality-gate/SKILL.md       how to run the gate, the verified baseline, and the six
                                 things about this repo that will otherwise mislead an agent
     evidence-report/SKILL.md    the integrity rule + the 5-section report format
-  command/
+  commands/
     gate.md                     /gate — runs the script as a subtask and reports the evidence
 
 opencode.json                   permissions: gate + read-only git pre-approved,
@@ -304,10 +308,10 @@ docs/
 <ul>
   <li><b>The script is the gate, not the prose.</b> MoAI&#8209;ADK describes its gate in agent
       instructions, which means every run reassembles it from natural language and drifts.
-      <code>gate.ps1</code> is one command with a deterministic output format. The skill tells the
+      <code>gate.py</code> is one command with a deterministic output format. The skill tells the
       agent to run <i>it</i> and explicitly forbids hand&#8209;rolled substitutes.</li>
-  <li><b>Format scope defaults to changed files.</b> <code>-Scope Branch</code> widens to the
-      merge&#8209;base with <code>origin/main</code> for PR time; <code>-Scope All</code> exists purely
+  <li><b>Format scope defaults to changed files.</b> <code>--scope branch</code> widens to the
+      merge&#8209;base with <code>origin/main</code> for PR time; <code>--scope all</code> exists purely
       to audit the 44&#8209;file debt (T&#8209;021). This keeps the gate green&#8209;able today without
       pretending the debt is gone.</li>
   <li><b>Build warnings are filtered to first&#8209;party code.</b> Warnings from <code>external/</code>
@@ -321,61 +325,112 @@ docs/
 <h3>Using it</h3>
 <pre><code># in opencode
 /gate
-/gate -Scope Branch
+/gate --scope branch
 
 # directly
-pwsh -File scripts/gate.ps1
-pwsh -File scripts/gate.ps1 -SkipFormat      # fast build+test loop
-pwsh -File scripts/gate.ps1 -Reconfigure     # after editing CMakeLists.txt
-pwsh -File scripts/gate.ps1 -Clean           # ~10 min, rebuilds vendored deps
-pwsh -File scripts/gate.ps1 -Scope All       # audit format debt; expected to fail</code></pre>
+python scripts/gate.py
+python scripts/gate.py --skip-format      # fast build+test loop
+python scripts/gate.py --reconfigure     # after editing CMakeLists.txt
+python scripts/gate.py --clean           # ~10 min, rebuilds vendored deps
+python scripts/gate.py --scope all       # audit format debt; expected to fail</code></pre>
 
 <!-- ══════════════════════════════════════════════════════════ -->
-<h2 id="phase2"><span class="n">06</span>Phase 2 design <span class="tag a">T&#8209;027, not yet built</span></h2>
+<h2 id="phase2"><span class="n">06</span>What Phase 2 ships <span class="tag g">T&#8209;027</span></h2>
 
-<p>One SPEC per feature branch, per the decision on record.</p>
+<p>One SPEC per feature branch, per the decision on record (D&#8209;006).</p>
 
 <pre><code>.opencode/
-  agent/
-    spec-auditor.md      subagent · edit:deny · grades a SPEC it did not write
-    verifier.md          subagent · edit:deny · runs gate.ps1, writes the evidence report
-  command/
+  agents/
+    spec-auditor.md      subagent · opus-5   · edit:deny · grades a SPEC it did not write
+    verifier.md          subagent · sonnet-5 · edit:deny · runs gate.py, writes the evidence
+  commands/
     plan.md              /plan "&lt;description&gt;"  → author + independently audit a SPEC
-    run.md               /run                    → implement the current branch's SPEC
+    run.md               /run                    → implement it, then verify independently
   skills/
-    spec-format/SKILL.md EARS-lite template, acceptance-criteria rules, S/M/L tiers
+    spec-format/SKILL.md EARS-lite template, the acceptance-criteria rule, S/M/L tiers
 
 .spec/
-  spec.md                one per feature branch. Merged selectively into main.
-  progress.md            append-only: what ran, what it printed, what is left</code></pre>
+  README.md              the layout, committed on every branch
+  &lt;branch-slug&gt;/
+    spec.md              status: draft → audited → in-progress → done
+    progress.md          append-only. Verifier reports pasted verbatim.</code></pre>
 
 <div class="flow">git switch -c <b>feat/tls-timeout</b>
 
 you  <b>/plan  handshake should time out after 30s instead of hanging</b>
-     ├─ @explore                  locates the code; does not guess at current behaviour
-     ├─ writes                    .spec/spec.md   (Tier M, 4 requirements, 3 acceptance criteria)
-     ├─ @spec-auditor             <u>DEBT</u> — "A2 names no verifying command"
+     ├─ refuses if you are on main/master — one SPEC per feature branch
+     ├─ @explore                  locates the code; does not describe behaviour from memory
+     ├─ writes                    .spec/feat-tls-timeout/spec.md   (Tier M, 5 reqs, 3 AC)
+     ├─ @spec-auditor  <i>opus-5</i>     <u>DEBT</u> — "A2 names no verifying command"
      │                                   — "R3 'promptly' is ambiguous"
-     ├─ fixes both
-     └─ @spec-auditor             <i>PASS</i>
-     → 90 seconds. No code written.
+     ├─ fixes both, appends the verdict to progress.md
+     └─ @spec-auditor             <i>PASS</i>   (nit: consider a fuzz case)
+     → status: audited. No code written. Max 2 audit rounds, then it stops and asks.
 
 you  <b>/run</b>
+     ├─ gate before touching anything — you cannot attribute a failure you inherited
      ├─ writes failing tests from the acceptance criteria, pastes the failure output
+     │  (and adds the #include to src/main.cpp — nothing else catches that, T-022)
      ├─ implements
-     ├─ @verifier                 runs gate.ps1 itself — the implementer's word does not count
+     ├─ @verifier  <i>sonnet-5</i>       runs gate.py <b>itself</b> — the implementer's word is a claim
      │                            build exit 0 · test 25/25 · format exit 0
-     │                            Gaps: clang-tidy not run (T-023)
+     │                            A1 PASS  A2 PASS  A3 NOT-CHECKED
+     │                            Gaps: clang-tidy (T-023), coverage (T-024)
      │                            Residual risk: no test for timeout during renegotiation
-     └─ appends the report to .spec/progress.md
+     └─ appends the report to progress.md verbatim. Max 3 verify rounds.
 
 merge to main, keeping what is worth keeping from .spec/</div>
 
+<h3>Design notes</h3>
+<ul>
+  <li><b>Read&#8209;only is a permission, not a promise.</b> Both subagents set
+      <code>edit: deny</code> and an explicit <code>bash</code> allowlist. The auditor can run
+      read&#8209;only git and nothing else; the verifier can additionally run
+      <code>gate.py</code>. This is the one place opencode enforces MoAI&#8209;ADK's design
+      <i>better</i> than MoAI&#8209;ADK, which relies on prompt discipline.</li>
+  <li><b>No <code>implementer</code> subagent.</b> The primary agent writes the code. A third
+      subagent would buy a context hop but no independence — independence comes from the
+      verifier, which is separate no matter who implemented.</li>
+  <li><b>Round caps.</b> Two audit rounds, three verify rounds. Repeated DEBT or repeated gate
+      failure usually means the request or the approach is wrong; grinding costs more than
+      stopping and asking.</li>
+  <li><b>Per&#8209;branch directories.</b> A single <code>.spec/spec.md</code> would conflict on
+      every second merge. <code>&lt;branch-slug&gt;/</code> never collides, and you drop the
+      directory in the squash if the SPEC is not worth keeping.</li>
+  <li><b>The primary model is not overridden.</b> <code>opencode.json</code> routes the two new
+      subagents and <code>small_model</code>; which model <i>you</i> drive with stays your choice.</li>
+  <li><b>The harness validates itself</b> (<code>scripts/check_opencode.py</code>, T&#8209;032).
+      opencode fails <i>quietly</i> on several mistakes: a skill whose <code>name</code> does not
+      match its directory is dropped, an invalid <code>permission</code> key is silently routed into
+      <code>options</code>, a missing <code>description</code> hides an agent from the model
+      entirely. None of that raises an error you would notice mid-session. Verified by planting seven
+      defects in a throwaway agent file and confirming all seven were reported — including
+      <code>write: deny</code>, which looks reasonable and is not a real permission key.</li>
+</ul>
+
+<h3>Model routing <span class="tag g">T&#8209;026</span></h3>
+<table>
+  <thead><tr><th>Seat</th><th>Model</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td><code>spec-auditor</code></td><td><code>claude-opus-5</code></td><td>Ceiling. Finding ambiguity in prose is the hardest judgment in the loop.</td></tr>
+    <tr><td>built&#8209;in <code>plan</code></td><td><code>claude-opus-5</code></td><td>Ceiling. Analysis and planning without edits.</td></tr>
+    <tr><td><code>verifier</code></td><td><code>claude-sonnet-5</code></td><td>Floor. Run a script, read a summary, compare to a baseline.</td></tr>
+    <tr><td>built&#8209;in <code>explore</code></td><td><code>claude-sonnet-5</code></td><td>Floor. Search and report.</td></tr>
+    <tr><td><code>small_model</code></td><td><code>claude-sonnet-5</code></td><td>Floor. Titles and summaries.</td></tr>
+    <tr><td>your primary agent</td><td>—</td><td>Left alone deliberately.</td></tr>
+  </tbody>
+</table>
+
 <p class="note">
-<b>The one non&#8209;negotiable rule.</b> The <code>implementer</code> may say "I ran the gate"; that is
-a claim. <code>gate.ps1</code> produces the exit code and output; that is evidence. A SPEC advances
-only on evidence that was read. Everything else in this proposal is convenience — this is the part
-that changes outcomes.
+<b>The one non&#8209;negotiable rule.</b> The implementer may say "I ran the gate"; that is a claim.
+<code>gate.py</code> produces the exit code and output; that is evidence. A SPEC advances only on
+evidence that was read. Everything else here is convenience — this is the part that changes outcomes.
+</p>
+
+<p class="note">
+<b>Unexercised.</b> No SPEC has been through <code>/plan</code> → <code>/run</code> yet
+(T&#8209;030). The first real feature branch is the test of whether the round caps, the tier
+judgement and the branch&#8209;slug resolution actually hold.
 </p>
 
 <!-- ══════════════════════════════════════════════════════════ -->
@@ -387,17 +442,21 @@ that changes outcomes.
   <thead><tr><th>ID</th><th>Limitation</th><th>Pri</th></tr></thead>
   <tbody>
     <tr><td class="tid">T&#8209;020</td><td>Clean&#8209;build warning count never measured. The "0 new first&#8209;party warnings" threshold is currently checked against incremental builds only, so already&#8209;compiled translation units are not re&#8209;examined.</td><td>P1</td></tr>
-    <tr><td class="tid">T&#8209;021</td><td>44 of 80 tracked <code>src/</code>+<code>test/</code> files fail <code>clang-format</code>. Until that is decided (bulk reformat vs. leave), the gate cannot run <code>-Scope All</code>.</td><td>P1</td></tr>
+    <tr><td class="tid">T&#8209;021</td><td>44 of 80 tracked <code>src/</code>+<code>test/</code> files fail <code>clang-format</code>. Until that is decided (bulk reformat vs. leave), the gate cannot run <code>--scope all</code>.</td><td>P1</td></tr>
     <tr><td class="tid">T&#8209;022</td><td>Test headers are <code>#include</code>d by hand in <code>src/main.cpp</code>. A new <code>test/*_test.h</code> that is not added there silently never runs, and nothing catches it.</td><td>P1</td></tr>
     <tr><td class="tid">T&#8209;023</td><td>No static analysis. Needs <code>.clang-tidy</code> + <code>CMAKE_EXPORT_COMPILE_COMMANDS</code> before it can become a gate step.</td><td>P2</td></tr>
     <tr><td class="tid">T&#8209;024</td><td>No coverage measurement, so no coverage threshold. MoAI&#8209;ADK's 85% bar is not portable to MSVC without work.</td><td>P2</td></tr>
     <tr><td class="tid">T&#8209;025</td><td><b>The gate is advisory.</b> Nothing prevents a commit that skipped it. A git <code>pre-commit</code> hook binds regardless of which agent — or human — is driving; an opencode plugin would only bind agents.</td><td>P1</td></tr>
-    <tr><td class="tid">T&#8209;026</td><td>Model routing (opus&#8209;5 ceiling / sonnet floor) not wired — needs the exact provider model IDs confirmed.</td><td>P2</td></tr>
-    <tr><td class="tid">T&#8209;027</td><td>Phase 2 itself: SPEC format, <code>.spec/</code>, <code>/plan</code>, <code>/run</code>, auditor + verifier agents.</td><td>P1</td></tr>
-    <tr><td class="tid">T&#8209;028</td><td>Author≠auditor and "evidence, not claims" are conventions the primary agent must honour. They should live in <code>docs/ai-instructions.md</code> so they load in every session, not only in the command that happens to be invoked.</td><td>P2</td></tr>
     <tr><td class="tid">T&#8209;029</td><td><code>ctest</code> is not wired. Decide whether to wire it or document the app&#8209;binary invocation as permanent.</td><td>P2</td></tr>
+    <tr><td class="tid">T&#8209;030</td><td><b>Phase 2 is unexercised.</b> No SPEC has been through <code>/plan</code> → <code>/run</code>. Validate on the first real feature branch.</td><td>P1</td></tr>
+    <tr><td class="tid">T&#8209;031</td><td><code>/plan</code> and <code>/run</code> derive the SPEC path from the branch name in prose. A rename or detached HEAD breaks it silently; a <code>scripts/spec-path.ps1</code> helper would make it mechanical.</td><td>P2</td></tr>
   </tbody>
 </table>
+
+<p>Closed by this work: <span class="tid">T&#8209;019</span> (Phase 1) ·
+<span class="tid">T&#8209;026</span> (model routing) ·
+<span class="tid">T&#8209;027</span> (Phase 2) ·
+<span class="tid">T&#8209;028</span> (working rules in <code>docs/ai-instructions.md</code>).</p>
 
 <h3>Known and accepted, not tracked</h3>
 <ul>
@@ -406,8 +465,14 @@ that changes outcomes.
   <li><b>Cost goes up in Phase 2.</b> Two extra subagent round&#8209;trips per SPEC. MoAI&#8209;ADK's
       answer is cheap workers; ours is fewer agents. Whether the SPECs prevent enough rework to pay
       for it is a claim neither project has measured.</li>
-  <li><b>Windows&#8209;only gate.</b> <code>gate.ps1</code> assumes MSVC and Visual Studio. The
-      Linux/macOS presets exist in <code>CMakePresets.json</code> but are not covered.</li>
+  <li><b>The Linux/macOS gate path is written but never executed</b> (T&#8209;033). Toolchain
+      discovery is isolated per platform, so the <code>linux-debug</code> and
+      <code>macos-debug</code> presets are reachable in principle. Claiming cross&#8209;platform
+      support before running it would itself be an unverified claim.</li>
+  <li><b>The tooling now needs Python 3.11+ and two pip packages</b> (T&#8209;034) in a C++ repo
+      that previously needed none. The cost is confined to <code>scripts/</code>; the CMake build
+      is untouched.</li>
+  <li><b>The vendored schema can drift</b> from upstream (T&#8209;035). Nothing detects staleness.</li>
 </ul>
 
 <!-- ══════════════════════════════════════════════════════════ -->
@@ -416,11 +481,11 @@ that changes outcomes.
 <table>
   <thead><tr><th>#</th><th>Question</th><th>Decision</th></tr></thead>
   <tbody>
-    <tr><td>1</td><td>How much to adopt?</td><td><b>Phase 1 only.</b> Gate + evidence discipline. No agents, no SPEC ceremony until Phase 1 has proven itself.</td></tr>
+    <tr><td>1</td><td>How much to adopt?</td><td><b>Phase 1, then Phase 2.</b> The gate shipped and was verified first; the SPEC loop followed once the evidence discipline had something real to stand on.</td></tr>
     <tr><td>2</td><td>Global or project scope?</td><td><b>Project.</b> Everything lives under <span class="path">C:\repo\test_framework\</span> and is committed, so a clone gets it.</td></tr>
     <tr><td>3</td><td>What is the real gate?</td><td><b>Resolved by measurement</b> — see §04. Configure + build + <code>test.exe --test</code> + <code>clang-format</code> on changed files. <code>ctest</code> and <code>clang-tidy</code> are explicitly out.</td></tr>
-    <tr><td>4</td><td>Where do SPECs live?</td><td><b>One SPEC per feature branch</b> in <span class="path">.spec/</span>, merged selectively into <code>main</code>. Phase 2.</td></tr>
-    <tr><td>5</td><td>Model routing?</td><td><b>Claude Opus 5 as ceiling, Claude Sonnet as floor.</b> Ceiling for authoring and auditing, floor for mechanical implementation and gate runs. Deferred to T&#8209;026 pending exact provider model IDs.</td></tr>
+    <tr><td>4</td><td>Where do SPECs live?</td><td><b>One SPEC per feature branch</b> at <span class="path">.spec/&lt;branch-slug&gt;/</span>, both files committed, merged selectively into <code>main</code>.</td></tr>
+    <tr><td>5</td><td>Model routing?</td><td><b><code>claude-opus-5</code> ceiling, <code>claude-sonnet-5</code> floor.</b> Ceiling for authoring and auditing, floor for mechanical work. The primary agent's model is left to the operator.</td></tr>
     <tr><td>6</td><td>File placement?</td><td><b>Everything inside the repo, traceable by git.</b> No agent&#8209;generated artefacts outside the worktree; <code>external_directory</code> is denied in <code>opencode.json</code>.</td></tr>
   </tbody>
 </table>
@@ -432,9 +497,11 @@ that changes outcomes.
   <a href="https://adk.mo.ai.kr">adk.mo.ai.kr</a> ·
   <a href="https://opencode.ai/docs/agents/">opencode.ai/docs</a> — agents, skills, commands, config schema.
   <br><br>
-  <b>Provenance.</b> The baseline in §04 was produced by running <code>scripts/gate.ps1</code> against
+  <b>Provenance.</b> The baseline in §04 was produced by running <code>scripts/gate.py</code> against
   commit <code>HEAD</code> of this repository on 2026&#8209;08&#8209;28, with <code>src/main.cpp</code>
-  modified in the working tree. Phase 2 in §06 is a design, not an implementation.
+  modified in the working tree. Phase 2 (§06) is implemented but <b>not yet exercised</b> — see
+  T&#8209;030. Model IDs were confirmed against the
+  <a href="https://models.dev/api.json">models.dev</a> catalogue, not assumed.
 </footer>
 
 </div>

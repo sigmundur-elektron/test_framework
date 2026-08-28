@@ -35,7 +35,7 @@ For each check: the exact command, its exit code, and the relevant output.
 Paste real output. Do not paraphrase it.
 
 ```
-$ pwsh -File scripts/gate.ps1
+$ python scripts/gate.py
 === GATE SUMMARY ==================================================
 PASS   configure  exit 0    skipped: CMakeCache.txt present
 PASS   build      exit 0    0 first-party warning(s)
@@ -68,7 +68,7 @@ for a GUI, threading, or persistence change it almost never does.
 >
 > **Evidence**
 > ```
-> $ pwsh -File scripts/gate.ps1
+> $ python scripts/gate.py
 > PASS   build      exit 0    0 first-party warning(s)
 > PASS   test       exit 0    22 passed | 0 failed ;; may_fail assertions: 4
 > FAIL   format     exit 1    1/1 non-conformant

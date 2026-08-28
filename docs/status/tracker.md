@@ -34,11 +34,13 @@ Phase maps to the [MVP roadmap](../plans/mvp-roadmap.md).
 | T-022 | Test files are `#include`d by hand in `src/main.cpp`; a new `test/*_test.h` silently never runs. Auto-discover or assert an expected test-case count | 0 | P1 | — | 2026-08-28 |
 | T-023 | No static analysis: add `.clang-tidy` + `CMAKE_EXPORT_COMPILE_COMMANDS`, then add a gate step | 0 | P2 | — | 2026-08-28 |
 | T-024 | No coverage measurement. Decide whether coverage is a gate threshold at all on MSVC | 0 | P2 | — | 2026-08-28 |
-| T-025 | Gate is advisory only — nothing blocks a commit that skipped it. Add a git `pre-commit` hook running `scripts/gate.ps1` | 0 | P1 | — | 2026-08-28 |
-| T-026 | Wire spec-flow model routing (opus-5 ceiling / sonnet floor) in `opencode.json`; needs exact provider model IDs confirmed | 0 | P2 | — | 2026-08-28 |
-| T-027 | spec-flow Phase 2: `spec-format` skill, `.spec/` per feature branch, `/plan` + `/run`, `spec-auditor` + `verifier` agents | 0 | P1 | — | 2026-08-28 |
-| T-028 | Author≠auditor and "evidence, not claims" are conventions the primary agent must honour; restate them in `docs/ai-instructions.md` so they load every session | 0 | P2 | — | 2026-08-28 |
+| T-025 | Gate is advisory only — nothing blocks a commit that skipped it. Add a git `pre-commit` hook running `scripts/gate.py` | 0 | P1 | — | 2026-08-28 |
 | T-029 | `ctest` is not wired (`enable_testing()`/`add_test()` absent, no build/test presets). Decide whether to wire it or document the app-binary invocation as permanent | 0 | P2 | — | 2026-08-28 |
+| T-030 | spec-flow Phase 2 is unexercised: no SPEC has been run through `/plan` → `/run` yet. Validate on the first real feature branch | 0 | P1 | — | 2026-08-28 |
+| T-031 | `/plan` and `/run` derive the SPEC path from the branch name in prose; a rename or detached HEAD breaks it silently. Consider a `scripts/spec-path.ps1` helper | 0 | P2 | — | 2026-08-28 |
+| T-033 | `gate.py` Linux/macOS toolchain path is written but **never executed**. The `linux-debug`/`macos-debug` presets are unverified | 0 | P2 | — | 2026-08-28 |
+| T-034 | `scripts/requirements.txt` (pyyaml, jsonschema) is installed manually. No pinning, no venv, no CI step to install it | 0 | P2 | — | 2026-08-28 |
+| T-035 | Vendored `scripts/schema/opencode-config.schema.json` can drift from upstream. Nothing detects staleness; re-run `scripts/refresh_schema.py` periodically | 0 | P2 | — | 2026-08-28 |
 
 ## In Progress
 
@@ -61,4 +63,9 @@ Phase maps to the [MVP roadmap](../plans/mvp-roadmap.md).
 | T-007 | Freeze export schema v1 (`tf.agent-export`); see `plans/export-format.md` | 4 | copilot | 2025-02-15 |
 | T-008 | Implement export command `agent_service::export_setup` (Glaze JSON) | 4 | copilot | 2025-02-15 |
 | T-013 | DocTest coverage for export (`test/agent_export_test.h`) | 4 | copilot | 2025-02-15 |
-| T-019 | spec-flow Phase 1: `scripts/gate.ps1`, `quality-gate` + `evidence-report` skills, `/gate` command, `opencode.json` | 0 | opencode | 2026-08-28 |
+| T-019 | spec-flow Phase 1: `scripts/gate.py`, `quality-gate` + `evidence-report` skills, `/gate` command, `opencode.json` | 0 | opencode | 2026-08-28 |
+| T-026 | spec-flow model routing wired: opus-5 ceiling (`spec-auditor`, `plan`), sonnet-5 floor (`verifier`, `explore`, `small_model`) | 0 | opencode | 2026-08-28 |
+| T-027 | spec-flow Phase 2: `spec-format` skill, `.spec/<branch-slug>/`, `/plan` + `/run`, `spec-auditor` + `verifier` agents (D-006) | 0 | opencode | 2026-08-28 |
+| T-028 | Working rules restated in `docs/ai-instructions.md` so they load in every session | 0 | opencode | 2026-08-28 |
+| T-032 | `scripts/check_opencode.py` — structural validation of `.opencode/` (skill name/dir match, valid permission keys, required descriptions); verified against 7 planted defects | 0 | opencode | 2026-08-28 |
+| T-036 | Port `gate.ps1`/`check-opencode.ps1` to Python; schema-driven validation, real YAML parsing, fail-fast on configure, V2 plural `.opencode/` layout (D-007) | 0 | opencode | 2026-08-28 |

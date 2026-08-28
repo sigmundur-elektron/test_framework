@@ -62,7 +62,7 @@ project. It is **not** application source code and is intentionally kept out of
   committed and traceable by git. Enforced by `external_directory: deny` in
   [`../opencode.json`](../opencode.json).
 - **Evidence, not claims:** before asserting that a build, test run or check
-  passed, run [`../scripts/gate.ps1`](../scripts/gate.ps1) (or `/gate` in
+  passed, run [`../scripts/gate.py`](../scripts/gate.py) (or `/gate` in
   opencode) and report using the five-section format in
   `.opencode/skills/evidence-report/SKILL.md`. A check that was not run belongs
   under *Gaps*, never under *Evidence*. See D-005.

@@ -8,7 +8,7 @@ description: Use before claiming any work is complete, before committing, and wh
 ## Run it
 
 ```powershell
-pwsh -File scripts/gate.ps1
+python scripts/gate.py
 ```
 
 That script **is** the gate. Do not reassemble the steps by hand — the script
@@ -20,12 +20,27 @@ Useful variants:
 
 | Command | When |
 |---|---|
-| `pwsh -File scripts/gate.ps1` | default — format check covers files changed vs `HEAD` plus untracked |
-| `pwsh -File scripts/gate.ps1 -Scope Branch` | before opening a PR — covers everything changed vs `origin/main` |
-| `pwsh -File scripts/gate.ps1 -SkipFormat` | fast build+test loop while iterating |
-| `pwsh -File scripts/gate.ps1 -Reconfigure` | after editing `CMakeLists.txt` or `CMakePresets.json` |
-| `pwsh -File scripts/gate.ps1 -Clean` | suspected stale build; ~10 minutes, rebuilds all vendored deps |
-| `pwsh -File scripts/gate.ps1 -Scope All` | auditing repo-wide format debt only — **expected to fail**, see T-021 |
+| `python scripts/gate.py` | default — format check covers files changed vs `HEAD` plus untracked |
+| `python scripts/gate.py --scope branch` | before opening a PR — covers everything changed vs `origin/main` |
+| `python scripts/gate.py --skip-format` | fast build+test loop while iterating |
+| `python scripts/gate.py --reconfigure` | after editing `CMakeLists.txt` or `CMakePresets.json` |
+| `python scripts/gate.py --clean` | suspected stale build; ~10 minutes, rebuilds all vendored deps |
+| `python scripts/gate.py --scope all` | auditing repo-wide format debt only — **expected to fail**, see T-021 |
+
+## Validating the harness itself
+
+```powershell
+python scripts/check_opencode.py
+```
+
+Separate from the code gate. opencode loads `.opencode/` once at startup and
+fails *quietly* on several mistakes: a skill whose `name` does not match its
+directory is dropped, an invalid `permission` key is silently routed into
+`options`, and a missing `description` hides an agent or skill from the model
+entirely. None of that raises an error you would notice mid-session.
+
+Run it after editing anything under `.opencode/` or `opencode.json`, and
+**restart opencode** afterwards — config is not hot-reloaded.
 
 ## What it runs
 
