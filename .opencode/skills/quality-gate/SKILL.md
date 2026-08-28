@@ -27,26 +27,43 @@ Useful variants:
 | `python scripts/gate.py --clean` | suspected stale build; ~10 minutes, rebuilds all vendored deps |
 | `python scripts/gate.py --scope all` | auditing repo-wide format debt only — **expected to fail**, see T-021 |
 | `python scripts/gate.py --scope all --update-baseline` | re-record `scripts/baseline.json` after a deliberate change |
+| `python scripts/gate.py --skip-self-test` | skip step 0; only when you are deliberately editing `gate.py` mid-debug |
 
 ## Validating the harness itself
 
 ```powershell
-python scripts/check_opencode.py
+python scripts/check_opencode.py    # .opencode/ structure
+python scripts/check_docs.py        # docs/ referential integrity
 ```
 
-Separate from the code gate. opencode loads `.opencode/` once at startup and
-fails *quietly* on several mistakes: a skill whose `name` does not match its
+Both are separate from the code gate and are **not** run by `gate.py`; a typo in
+a document should not fail a build.
+
+`check_opencode.py` exists because opencode loads `.opencode/` once at startup
+and fails *quietly* on several mistakes: a skill whose `name` does not match its
 directory is dropped, an invalid `permission` key is silently routed into
 `options`, and a missing `description` hides an agent or skill from the model
 entirely. None of that raises an error you would notice mid-session.
 
-Run it after editing anything under `.opencode/` or `opencode.json`, and
-**restart opencode** afterwards — config is not hot-reloaded.
+`check_docs.py` enforces the conventions `docs/` runs on: every `T-NNN` cited
+must exist as a tracker row, every `D-NNN` as a decision heading, relative links
+must resolve, and measured numbers must not be hardcoded in prose. To cite an ID
+that deliberately does not exist, suppress it explicitly:
+
+```markdown
+<!-- check-docs: allow-missing T-012 D-002 -->
+```
+
+A suppression for an ID that later starts existing warns, so it cannot rot.
+
+Run both after editing anything under `.opencode/`, `opencode.json` or `docs/`,
+and **restart opencode** after `.opencode/` changes — config is not hot-reloaded.
 
 ## What it runs
 
 | # | Step | Command | Threshold |
 |---|---|---|---|
+| 0 | tooling | `python scripts/test_tooling.py` | exit 0. The gate's own unit tests. A failure here **stops the run** — a broken gate produces evidence that looks like a pass. ~0.02s. |
 | 1 | configure | `cmake --preset x64-debug` | exit 0. Skipped when `out/build/x64-debug/CMakeCache.txt` exists. |
 | 2 | build | `cmake --build out/build/x64-debug` | exit 0, **and zero new warnings in first-party code**. Warnings from `external/` are filtered out. |
 | 3 | test | `out/build/x64-debug/test.exe --test` | exit 0, and the doctest counts must not regress against `scripts/baseline.json`. |

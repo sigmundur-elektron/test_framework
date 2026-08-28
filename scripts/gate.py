@@ -297,11 +297,15 @@ def load_baseline() -> dict | None:
         return None
 
 
-def compare_baseline(metrics: dict[str, int], scope: str) -> tuple[list[str], bool]:
+def compare_baseline(metrics: dict[str, int], scope: str,
+                     test_ran: bool = True) -> tuple[list[str], bool]:
     """Compare measured metrics against the recorded baseline.
 
     Returns (report_lines, drifted). A drop in coverage, a change in may_fail or
     a new warning is drift and fails the gate. Growth is reported, not punished.
+
+    `test_ran` must be False when the test step did not execute, so that missing
+    metrics are attributed to the skip rather than treated as a parse failure.
     """
     base = load_baseline()
     if base is None:
@@ -310,6 +314,19 @@ def compare_baseline(metrics: dict[str, int], scope: str) -> tuple[list[str], bo
     drift: list[str] = []
     ahead: list[str] = []
     bt = base.get("test", {})
+
+    # Fail closed. Previously, metrics the parser could not find were simply
+    # skipped, so a doctest summary whose wording changed produced an empty
+    # metric set and a confident "BASELINE: MATCH" that had checked nothing.
+    # A number we failed to read is not a number that matched.
+    if test_ran:
+        missing = [k for k in ("test_cases", "assertions", "may_fail")
+                   if k in bt and k not in metrics]
+        if missing:
+            drift.append(
+                f"could not parse {', '.join(missing)} from the test output "
+                f"(doctest summary format changed?)"
+            )
 
     # may_fail is exact in both directions: a drop can mean a gap was genuinely
     # closed, or that someone deleted the marker. Both need a human to look.
@@ -429,6 +446,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--base-ref", default=None,
                     help="base for --scope branch; defaults to origin/HEAD")
     ap.add_argument("--skip-format", action="store_true")
+    ap.add_argument("--skip-self-test", action="store_true",
+                    help="skip the gate's own unit tests (step 0)")
     ap.add_argument("--reconfigure", action="store_true")
     ap.add_argument("--update-baseline", action="store_true",
                     help="re-record scripts/baseline.json from this run")
@@ -454,6 +473,30 @@ def main(argv: list[str] | None = None) -> int:
     head = git(["rev-parse", "--short", "HEAD"])
     print(f"commit       : {head[0] if head else '?'} on {branch[0] if branch else '?'}")
     print(f"base ref     : {args.base_ref}")
+
+    # ------------------------------------------------------------ 0. tooling
+    # The gate measures everything else, so a broken gate produces evidence that
+    # looks like a pass. These are pure-function tests over parsing and baseline
+    # comparison; they take ~0.02s and touch nothing. (T-053)
+    section("0. tooling")
+    if args.skip_self_test:
+        print("skipped (--skip-self-test)")
+        steps.append(Step("tooling", "(not run)", SKIPPED, "skipped: --skip-self-test"))
+    else:
+        selftest = REPO / "scripts" / "test_tooling.py"
+        if not selftest.exists():
+            print(f"missing {selftest}")
+            steps.append(Step("tooling", "(not run)", 1, "scripts/test_tooling.py not found"))
+            return finish(steps, "gate self-test is missing")
+        cmd = "python scripts/test_tooling.py"
+        code, out = run([sys.executable, str(selftest)], tc.env, cmd)
+        summary = next((ln for ln in reversed(out) if ln.startswith(("OK", "FAILED"))), "?")
+        ran = next((ln for ln in out if ln.startswith("Ran ")), "")
+        steps.append(Step("tooling", cmd, code, f"{ran.strip()} ;; {summary}"))
+        if code != 0:
+            for name in ("configure", "build", "test", "format"):
+                steps.append(Step(name, "(not run)", SKIPPED, "skipped: gate self-test failed"))
+            return finish(steps, "the gate's own tests fail; its measurements cannot be trusted")
 
     # ---------------------------------------------------------- 1. configure
     if args.clean and build_dir.exists():
@@ -494,6 +537,7 @@ def main(argv: list[str] | None = None) -> int:
     # --------------------------------------------------------------- 3. test
     section("3. test")
     exe = build_dir / ("test.exe" if system == "Windows" else "test")
+    test_ran = False
     if build_code != 0:
         print("build failed, not running tests")
         steps.append(Step("test", "(not run)", SKIPPED, "skipped: build failed"))
@@ -510,6 +554,7 @@ def main(argv: list[str] | None = None) -> int:
             and ("test cases:" in ln or "assertions:" in ln)
         )
         metrics.update(parse_doctest(out))
+        test_ran = True
         steps.append(Step("test", cmd, code,
                           f"{summary} ;; may_fail assertions: {metrics.get('may_fail', 0)}"))
 
@@ -561,7 +606,7 @@ def main(argv: list[str] | None = None) -> int:
         write_baseline(metrics, args.preset, args.scope)
         return finish(steps)
 
-    baseline_lines, drifted = compare_baseline(metrics, args.scope)
+    baseline_lines, drifted = compare_baseline(metrics, args.scope, test_ran)
     return finish(steps, baseline=baseline_lines, drifted=drifted)
 
 

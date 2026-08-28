@@ -76,8 +76,13 @@ an external open coding agent and executes at least one plan.
 ---
 
 ## Out of scope for MVP / later
-- **T-012** Rename `src/data/` → `src/data/` (see
-  [decisions D-002](../notes/decisions.md)) — cosmetic clarity, not MVP-blocking.
+<!-- check-docs: allow-missing T-012 D-002 -->
+- Cosmetic source-tree renames. A former entry here cited **T-012** and
+  **D-002**; neither was ever written, and the rename it described named the
+  same path as both source and target (`src/data/` → `src/data/`). Removed
+  rather than back-filled with invented history. `scripts/check_docs.py` now
+  fails on a reference to an ID that does not exist, which is how this was found
+  — the suppression above is why naming them here does not re-trip it.
 - Rich UI polish, multi-project management, remote sync of the repository.
 
 ## MVP definition of done

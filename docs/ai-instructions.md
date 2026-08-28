@@ -1,3 +1,9 @@
+---
+last-updated: 2026-08-28
+owner: opencode
+status: active
+---
+
 # AI Instructions — test_framework
 
 Loaded into every opencode session via `instructions` in
@@ -33,6 +39,9 @@ ways, not as ceremony.
    `python scripts/check_opencode.py` — opencode fails quietly on a
    skill/directory name mismatch, a bad frontmatter type or a missing
    description — then restart opencode, because config is not hot-reloaded.
+   After editing anything under `docs/`, run `python scripts/check_docs.py`,
+   which fails on a `T-NNN`/`D-NNN` citation that does not resolve, a broken
+   relative link, or a measured number hardcoded into prose.
    First time only: `python -m pip install -r scripts/requirements.txt`.
 
 3. **Author ≠ auditor.** Whoever writes a SPEC does not grade it — `@spec-auditor`
