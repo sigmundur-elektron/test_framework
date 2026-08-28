@@ -41,6 +41,8 @@ Phase maps to the [MVP roadmap](../plans/mvp-roadmap.md).
 | T-033 | `gate.py` Linux/macOS toolchain path is written but **never executed**. The `linux-debug`/`macos-debug` presets are unverified | 0 | P2 | — | 2026-08-28 |
 | T-034 | `scripts/requirements.txt` (pyyaml, jsonschema) is installed manually. No pinning, no venv, no CI step to install it | 0 | P2 | — | 2026-08-28 |
 | T-035 | Vendored `scripts/schema/opencode-config.schema.json` can drift from upstream. Nothing detects staleness; re-run `scripts/refresh_schema.py` periodically | 0 | P2 | — | 2026-08-28 |
+| T-037 | `/plan`'s two-round audit cap fired on an unambiguous request. Its rationale assumes repeated DEBT means an unclear ask; it also catches "author keeps getting facts wrong", which needs a different response. Distinguish the two, or raise the cap for factual defects | 0 | P2 | — | 2026-08-28 |
+| T-038 | `@spec-auditor` round 2 left most Context/Out-of-scope `file:line` citations unverified (its own Gaps section). Consider requiring the auditor to re-verify citations it checked in an earlier round | 0 | P2 | — | 2026-08-28 |
 
 ## In Progress
 
