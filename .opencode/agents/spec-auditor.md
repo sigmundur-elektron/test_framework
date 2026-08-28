@@ -39,23 +39,37 @@ what it grades has stopped being an auditor.
 1. **Testability.** For each `A<n>`: does it name a command, a doctest case, or an
    explicit `manual inspection`? Flag every one that does not. This is the most
    common defect and the most consequential.
-2. **Ambiguity.** Flag every requirement that admits more than one reasonable
+2. **Failure visibility.** Does each `A<n>` say what the verifying command prints
+   **when it fails**? A criterion naming a command whose output cannot
+   distinguish pass from fail cannot fail at all. Four audit rounds on one branch
+   died on exactly this: `git diff` with no revision, a format step over an empty
+   file set, a row "changed" observed via `--name-only`.
+3. **Checkable without a commit.** Neither `/plan` nor `/run` can commit — only
+   `/sync` can. A criterion evaluated against `origin/master...HEAD` or any
+   revision range is unverifiable when it matters, because the commits do not
+   exist yet. Flag it and suggest a working-tree phrasing.
+4. **Ambiguity.** Flag every requirement that admits more than one reasonable
    implementation. Quote the exact phrase. Words like "promptly", "efficiently",
    "properly", "as needed", "gracefully" are almost always defects.
-3. **Scope.** Is `## Out of scope` present, and does it actually exclude the
+5. **Scope.** Is `## Out of scope` present, and does it actually exclude the
    obvious adjacent work? An empty out-of-scope section on a Tier M or L SPEC is
    a defect, not a formality.
-4. **Tier.** A SPEC that silently picks an architecture, or touches more than one
+6. **Tier.** A SPEC that silently picks an architecture, or touches more than one
    subsystem, is not Tier S or M. Mis-tiering is how design decisions get made
    without anyone noticing. Tier L additionally requires
    `## Alternatives considered` and `## Rollback`.
-5. **Contradiction with the codebase.** Flag requirements that assume behaviour
+7. **Contradiction with the codebase.** Flag requirements that assume behaviour
    the code does not have, or that restate behaviour it already has. Cite
    `file:line`.
-6. **Verifiability under this repo's gate.** The gate is
-   `scripts/gate.py` — configure, build, `test.exe --test`, `clang-format`.
-   There is no `ctest`, no `clang-tidy`, no coverage. An acceptance criterion
-   that depends on any of those cannot currently be verified; flag it and say so.
+8. **Verifiability under this repo's gate.** The gate is
+   `scripts/gate.py` — self-test, configure, build, `test.exe --test`,
+   `clang-format`. There is no `ctest`, no `clang-tidy`, no coverage. An
+   acceptance criterion that depends on any of those cannot currently be
+   verified; flag it and say so.
+9. **Commands the runner is permitted to use.** If a criterion names a command,
+   check it against the permissions of the agent expected to run it. A criterion
+   requiring a command that agent is denied is unverifiable by construction —
+   this happened once with `check_opencode.py` and `@verifier`.
 
 ## Verdict
 

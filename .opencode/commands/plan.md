@@ -62,7 +62,14 @@ Current branch and working tree:
 
 - **Write no implementation code in this command.** None. Not a stub, not a
   signature, not a test. `/plan` produces one document and nothing else.
+- **You cannot commit.** `opencode.json` denies `git add` and `git commit` to
+  every agent except `integrator`, which only `/sync` runs. Planning does not
+  land anything.
 - Do not run the gate here; there is nothing to verify yet.
+- **Write acceptance criteria that are checkable without a commit.** `/run`
+  cannot commit either, so a criterion evaluated against `origin/master...HEAD`
+  or any revision range is unverifiable at the moment it matters. Phrase it
+  against the working tree, a doctest case, or a command's output instead.
 - Reference the relevant `T-NNN` from `docs/status/tracker.md` in the SPEC's
   Context. If this work has no task, say so — it may need one.
 - If the tier is L, note in the frontmatter which `D-NNN` should record the

@@ -10,6 +10,84 @@ Append one entry per non-trivial decision. Newest at top.
 
 ---
 
+## D-010 — `/sync` is the only path that commits; committing is removed from every other agent by permission
+**Status:** accepted
+**Date:** 2026-08-28
+
+**Context.** T-043: `/run` said *"Do not commit. I commit."* while SPECs written
+by `/plan` carried acceptance criteria evaluated against `origin/master...HEAD`.
+Both could not hold — the commits the criteria examined could not exist, because
+the agent evaluating them was forbidden to create any. A verifier substituted
+`git diff origin/master`, which conflated earlier branch commits with the
+session's own work and produced a **false "out-of-scope files" finding**.
+
+The rule was also only prose. Nothing stopped an agent committing except an
+instruction it could reason its way around, and `plan → run` had no third stage
+at all: close-out work (tracker rows, decision entries, SPEC status) was a
+two-line afterthought at the end of `/run` that nothing verified.
+
+**Decision.**
+
+1. **`/sync` is the third lifecycle stage** and the only command that commits.
+   It verifies the gate itself, brings the tracker and decision log up to date,
+   stages explicitly, commits, and prints a PR body. It never pushes.
+2. **Committing is a permission boundary, not an instruction.** `opencode.json`
+   denies `git add`, `git commit`, `git push`, `git reset` and `git rebase`
+   globally. A new `integrator` agent re-grants `add`/`commit` in its own
+   frontmatter and is the sole holder of that right; `/sync` is the only command
+   that runs it. `integrator` is additionally denied `push`, `reset`, `rebase`,
+   `checkout` and `merge`.
+3. **Acceptance criteria must be checkable without a commit.** Recorded in the
+   `spec-format` skill and added to `@spec-auditor`'s checklist. A criterion
+   phrased against a revision range is unverifiable at the moment it matters.
+4. **`/sync` refuses on `master` and `main`**, matching `/plan`'s existing
+   refusal. Work reaches a shared branch by merge.
+
+**Rationale.**
+
+- D-006 established that read-only auditors are worth more than prose discipline
+  because opencode enforces `permission.edit: deny` mechanically. The same
+  argument applies to committing, and had simply not been made yet: "do not
+  commit" in a markdown file is exactly the class of rule an agent talks itself
+  past when it feels finished.
+- Rejected *letting `/run` commit* (the option originally recommended): it makes
+  revision-range criteria verifiable, but puts landing work in the hands of the
+  agent that wrote it, which is the same author-grades-own-work failure D-006
+  exists to prevent. Fixing the criteria is the smaller change and removes the
+  conflict at its source.
+- Rejected *keeping the ban as prose in `/run`*: that is the status quo that
+  produced T-043.
+- `git commit*` is a prefix pattern, so it also matches `--no-verify` and
+  `--amend`. Explicit deny entries for those are declared, but pattern
+  precedence in opencode is **unverified** — the real enforcement for that
+  specific hole is the pre-commit hook (T-025), which binds the commit itself
+  regardless of who runs it. T-025 is therefore no longer optional.
+
+**Impact.**
+- New: `.opencode/agents/integrator.md`, `.opencode/commands/sync.md`.
+- `opencode.json`: global denies added; stale `pwsh scripts/gate.ps1` allowances
+  removed (that script was deleted in D-007); `check_docs.py` and
+  `test_tooling.py` added to the allowlist.
+- `/run` and `/plan` gain explicit statements that they cannot commit.
+- `spec-format` gains the no-revision-range rule and the "state what failure
+  prints" rule (T-040); `@spec-auditor` gains three checks.
+- Tracker: T-046, T-043, T-040 done.
+
+**Consequences.** After an opencode restart, **no ordinary session can commit** —
+including the operator's own default agent. That is the intended shape, but it is
+a real behaviour change: `/sync` becomes the only route, and it refuses on
+`master`. An operator who commits directly to `master` today will find `/sync`
+declines to help until the work is on a branch.
+
+**Unverified.** opencode caches `.opencode/` and `opencode.json` at startup
+(T-039), so none of this is live in the session that wrote it. Two things need
+confirming on first use after a restart: that an agent-level `allow` genuinely
+overrides a global `deny`, and that `integrator`'s narrower `git push: deny`
+holds. If the override does not work, `/sync` will be unable to commit at all —
+a loud, safe failure rather than a silent one.
+
+---
+
 ## D-009 — Baseline facts move into `scripts/baseline.json`; `implementer` is kept but constrained
 **Status:** accepted
 **Date:** 2026-08-28

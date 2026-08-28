@@ -52,7 +52,7 @@ Current branch and working tree:
    in `progress.md` which `A<n>` pass, which fail, and what you would try next.
 
 8. When every `A<n>` is PASS, set `status: done` in the SPEC and update the
-   relevant `T-NNN` in `docs/status/tracker.md`.
+   relevant `T-NNN` in `docs/status/tracker.md`. Then tell me to run `/sync`.
 
 ## Rules
 
@@ -63,4 +63,8 @@ Current branch and working tree:
   (no `ctest`, no `clang-tidy`, no coverage), say so plainly and mark it
   `NOT-CHECKED`. Do not quietly reinterpret it into something you can check.
 - Do not reformat files the change did not touch to make the format step green.
-- Do not commit. I commit.
+- **You cannot commit.** `opencode.json` denies `git add`, `git commit`,
+  `git push` and `git reset` to every agent except `integrator`, which only
+  `/sync` runs. This is a permission boundary, not an instruction you can
+  reason around: implementation does not land its own work. Finish, verify,
+  then hand over to `/sync`.

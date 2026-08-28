@@ -96,6 +96,28 @@ If something genuinely can only be checked by eye — a UI layout, a colour — 
 it `— verified by: manual inspection` and say what you looked at. Do not disguise
 it as automated.
 
+**A criterion must be checkable without a commit.** Neither `/plan` nor `/run`
+can commit — only `/sync` can, by permission. So a criterion phrased against
+`origin/master...HEAD`, or any revision range, is unverifiable at the moment it
+is supposed to be verified: the commits do not exist yet. This produced a real
+false finding once, when a verifier substituted `git diff origin/master` and
+conflated earlier branch commits with the session's own work. Phrase criteria
+against the **working tree**, a doctest case, or a command's output.
+
+**State what the command prints when it fails.** Four audit rounds on one branch
+died on the same defect: a criterion naming a command whose output cannot
+distinguish pass from fail — `git diff` with no revision, a format step over an
+empty file set, a row "changed" observed via `--name-only`. If you cannot say
+what failure looks like, the criterion cannot fail, and a criterion that cannot
+fail is decoration.
+
+```
+A3. A tool without the matching grant is refused
+    — verified by: test/permissions_test.h "[permissions] ungranted tool call is denied"
+      (via scripts/gate.py). Fails as: doctest reports the case failed and the
+      test-case count in GATE SUMMARY drops.
+```
+
 ## Tiers
 
 | Tier | Shape | Flow |
