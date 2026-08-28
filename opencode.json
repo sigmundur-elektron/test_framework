@@ -1,0 +1,19 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "docs/ai-instructions.md"
+  ],
+  "permission": {
+    "bash": {
+      "*": "ask",
+      "pwsh -File scripts/gate.ps1*": "allow",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "git rev-parse*": "allow",
+      "git merge-base*": "allow",
+      "git ls-files*": "allow"
+    },
+    "external_directory": "deny"
+  }
+}

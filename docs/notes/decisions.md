@@ -1,5 +1,5 @@
 ---
-last-updated: 2025-02-14
+last-updated: 2026-08-28
 owner: copilot
 status: active
 ---
@@ -9,6 +9,79 @@ status: active
 Append one entry per non-trivial decision. Newest at top.
 
 ---
+
+## D-005 — Adopt `spec-flow`: a minimal moai-adk-style harness; Phase 1 = the quality gate
+**Status:** accepted
+**Date:** 2026-08-28
+
+**Context.** [MoAI-ADK](https://github.com/modu-ai/moai-adk) is an agentic
+development harness for Claude Code: a SPEC-driven `plan → run → sync` lifecycle,
+TRUST 5 quality gates, evidence-bound completion claims, and — in v3.1 — a
+five-column Kanban board spread across four hand-launched terminals. It is large
+(12 agents, 18+ skills, an MCP server, a web console, multi-LLM cost routing).
+Most of that machinery exists to work around Claude Code limitations that
+opencode does not have; notably, opencode's `task` tool already gives each
+subagent an isolated context, which is the whole reason Kanban Mode exists.
+
+The recurring, concrete failure it addresses is real for us: an agent asserting
+that tests pass without having run them.
+
+**Decision.** Adopt a deliberately small port — `spec-flow` — in phases.
+
+- **Phase 1 (this change, T-019).** The verification half only:
+  `scripts/gate.ps1`, the `quality-gate` and `evidence-report` skills, the
+  `/gate` command, and `opencode.json`. **No agents, no SPEC documents, no model
+  routing.** The evidence discipline is testable on its own before any ceremony
+  is added.
+- **Phase 2 (T-027, deferred).** The SPEC half: a `spec-format` skill, one SPEC
+  per feature branch under `.spec/`, `/plan` and `/run` commands, and a
+  `spec-auditor` + `verifier` pair enforcing *author ≠ auditor*.
+- **Explicitly dropped.** Kanban/Factory modes, worktree orchestration, MCP
+  server, web console, multi-LLM cost routing, 16-language detection, the
+  `@MX`/Navigator tag graph, the goal engine, and the self-improvement loop.
+
+Scope is **project-local and committed** — everything lives in this repository
+and is traceable by git. Agents must not write artefacts outside the worktree;
+`opencode.json` sets `external_directory: deny`.
+
+**The gate was established by measurement, not assumption.** The first draft of
+the proposal guessed `cmake --preset` + `ctest --preset`; both are wrong here:
+
+- `ctest` does not work at all — there is no `enable_testing()`/`add_test()`.
+  Tests are doctest cases compiled *into* the app and run via `test.exe --test`.
+- `CMakePresets.json` has configure presets only, so `cmake --build --preset`
+  fails; the build dir must be named explicitly.
+- Neither `cmake` nor `clang-format` is on `PATH`; both ship inside Visual
+  Studio, and `cl.exe` needs the VS developer environment for `INCLUDE`/`LIB`.
+- Exit code 0 is not a pass: `test/mvp_gaps_test.h` marks 4 known MVP gaps
+  `may_fail`, so they print `ERROR:` and the run still exits 0.
+
+Recorded baseline (`x64-debug`, 2026-08-28): build exit 0 / 0 first-party
+warnings; 22 test cases, 22 passed; 97 assertions, 93 passed, 4 `may_fail`;
+44 of 80 tracked `src/`+`test/` files fail `clang-format`.
+
+**Rationale.**
+- A gate expressed as *prose in agent instructions* is reassembled from natural
+  language on every run and drifts. A script has one output format and an exit
+  code, so its result is reproducible by a human.
+- Because 44/80 files already fail formatting, the gate defaults to **changed
+  files only** (`-Scope Changed`), with `-Scope Branch` for PR time. This lets
+  the gate be green today without pretending the debt does not exist (T-021).
+- Two skills and one command is a small enough surface that a wrong call is
+  cheap to notice; a 52-skill catalogue is not.
+
+**Impact.**
+- New: `scripts/gate.ps1`, `.opencode/`, `opencode.json`,
+  `docs/proposals/spec-flow.html`.
+- Tracker: T-019 done; **T-020 … T-029** opened for every identified limitation.
+- No application source changes.
+
+**Consequences.** Completion claims now have a defined shape and a command that
+backs them. The gate remains **advisory** — nothing blocks a commit that skipped
+it (T-025 proposes a git `pre-commit` hook, which binds humans and agents alike,
+rather than an opencode plugin, which would bind only agents). Phase 2 will add
+two subagent round-trips per unit of work; whether the SPECs prevent enough
+rework to pay for that is unmeasured, by us and by MoAI-ADK alike.
 
 ## D-004 — "Save as template" for agents; de-emphasize setup export; two-way export
 **Status:** accepted

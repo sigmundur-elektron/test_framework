@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>spec-flow — a minimal moai-adk for test_framework</title>
+<style>
+  :root{
+    --bg:#0e1116; --bg2:#151a21; --bg3:#1b222b; --line:#2a323d;
+    --fg:#d7dee7; --dim:#8b97a6; --acc:#5ac8fa; --acc2:#7ee787;
+    --warn:#f0b849; --bad:#ff7b72;
+    --mono:ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 28px 120px}
+  header{border-bottom:1px solid var(--line);padding:56px 0 32px;margin-bottom:34px}
+  h1{font-size:34px;margin:0 0 10px;letter-spacing:-.8px;font-weight:650}
+  h1 .lt{color:var(--acc)}
+  .sub{color:var(--dim);font-size:17px;margin:0}
+  .badges{margin-top:18px}
+  .badge{display:inline-block;font-family:var(--mono);font-size:11.5px;padding:3px 10px;
+         border-radius:20px;border:1px solid var(--line);color:var(--dim);margin:0 6px 6px 0}
+  .badge.ok{border-color:#2f5d3a;color:var(--acc2)}
+  .badge.a{border-color:#2d5b7a;color:var(--acc)}
+  h2{font-size:23px;margin:54px 0 6px;letter-spacing:-.4px;font-weight:620;
+     padding-top:14px;border-top:1px solid var(--line)}
+  h2 .n{color:var(--acc);font-family:var(--mono);font-size:15px;margin-right:10px}
+  h3{font-size:17px;margin:30px 0 8px;font-weight:620;color:#fff}
+  h4{font-size:13px;margin:22px 0 6px;font-weight:600;color:var(--acc);font-family:var(--mono)}
+  p{margin:10px 0}
+  a{color:var(--acc)}
+  ul,ol{margin:10px 0;padding-left:22px} li{margin:5px 0}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);
+       padding:2px 6px;border-radius:4px;color:#cfe6ff}
+  pre{background:var(--bg2);border:1px solid var(--line);border-radius:8px;
+      padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;
+      line-height:1.6;margin:12px 0}
+  pre code{background:none;padding:0;color:var(--fg)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.6px}
+  tbody tr:hover{background:var(--bg2)}
+  .lede{font-size:16.5px;color:#c3cdd9;border-left:3px solid var(--acc);
+        padding:2px 0 2px 18px;margin:22px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  .card{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:18px 20px}
+  .card h3{margin-top:0}
+  .keep{border-left:3px solid var(--acc2)} .drop{border-left:3px solid var(--bad)}
+  .note{background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--warn);
+        border-radius:6px;padding:14px 18px;margin:18px 0;font-size:14px}
+  .note b{color:var(--warn)}
+  .note.ok{border-left-color:var(--acc2)} .note.ok b{color:var(--acc2)}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;
+       border-radius:20px;border:1px solid var(--line);color:var(--dim);margin-right:6px}
+  .tag.a{border-color:#2d5b7a;color:var(--acc)}
+  .tag.g{border-color:#2f5d3a;color:var(--acc2)}
+  .tag.r{border-color:#6d3a37;color:var(--bad)}
+  nav.toc{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:18px 22px;margin:28px 0}
+  nav.toc ol{margin:0;padding-left:20px;columns:2;column-gap:34px}
+  @media(max-width:700px){nav.toc ol{columns:1}}
+  nav.toc a{text-decoration:none}
+  nav.toc a:hover{text-decoration:underline}
+  .flow{font-family:var(--mono);font-size:12.5px;line-height:1.75;background:var(--bg2);
+        border:1px solid var(--line);border-radius:8px;padding:20px;overflow-x:auto;
+        color:var(--dim);white-space:pre}
+  .flow b{color:var(--acc);font-weight:600}
+  .flow i{color:var(--acc2);font-style:normal}
+  .flow u{color:var(--bad);text-decoration:none}
+  .path{font-family:var(--mono);font-size:12px;color:var(--acc2)}
+  footer{margin-top:70px;padding-top:24px;border-top:1px solid var(--line);
+         color:var(--dim);font-size:13px}
+  .tid{font-family:var(--mono);color:var(--warn);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>spec&#8209;flow <span class="lt">— a deliberately small moai&#8209;adk</span></h1>
+  <p class="sub">Porting the useful 20% of MoAI&#8209;ADK's harness onto opencode's native agents, skills and commands.</p>
+  <div class="badges">
+    <span class="badge ok">status: accepted</span>
+    <span class="badge ok">phase 1: implemented — T&#8209;019</span>
+    <span class="badge a">phase 2: planned — T&#8209;027</span>
+    <span class="badge">scope: project&#8209;local</span>
+    <span class="badge">2026&#8209;08&#8209;28</span>
+  </div>
+</header>
+
+<p class="lede">
+MoAI&#8209;ADK is a 4,400&#8209;commit Go binary that wraps Claude Code with 12 agents, 18+ skills, an MCP
+server, a web console, multi&#8209;LLM cost routing and a five&#8209;column multi&#8209;terminal Kanban board.
+Most of that machinery works around limitations opencode does not have. What is genuinely worth
+stealing fits in <b>one PowerShell script, two skills, one command and a config file</b>.
+Phase 1 of that is now in this repo and verified against a real build.
+</p>
+
+<nav class="toc">
+  <ol>
+    <li><a href="#research">What MoAI&#8209;ADK actually is</a></li>
+    <li><a href="#thesis">Keep / drop</a></li>
+    <li><a href="#mapping">Concept → opencode primitive</a></li>
+    <li><a href="#gate">The real gate <span class="tag g">measured</span></a></li>
+    <li><a href="#shipped">What Phase 1 ships</a></li>
+    <li><a href="#phase2">Phase 2 design</a></li>
+    <li><a href="#limits">Limitations → tracker</a></li>
+    <li><a href="#decisions">Decisions on record</a></li>
+  </ol>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2 id="research"><span class="n">01</span>What MoAI&#8209;ADK actually is</h2>
+
+<p>
+Two products share the name. The <b>Python line</b> (PyPI <code>moai-adk</code> v1.14.5) was 20 agents +
+52 skills, EARS specs, DDD cycles and LSP&#8209;driven autonomous loops. The <b>current Go line</b>
+(<code>modu-ai/moai-adk</code> v3.1.3) is a rewrite: a single binary that installs a
+<code>.claude/</code> + <code>.moai/</code> scaffold and drives Claude Code from outside. The design
+below borrows the spine of v3 and the vocabulary of v1.
+</p>
+
+<h3>The spine</h3>
+<div class="flow"><b>/moai plan "Add JWT login"</b>   → authors SPEC&#8209;AUTH&#8209;001 (GEARS/EARS requirements + acceptance criteria)
+        ↓
+   <i>plan-auditor</i>            → an <b>independent</b> agent audits the SPEC. PASS → run. DEBT → back to plan.
+        ↓
+<b>/moai run SPEC-AUTH-001</b>    → TDD (RED→GREEN→REFACTOR) or DDD (ANALYZE→PRESERVE→IMPROVE)
+        ↓
+   <i>trust-but-verify</i>        → orchestrator <b>re-runs</b> the checks itself; agent claims are not trusted
+        ↓
+   <i>sync-auditor</i>            → scores Functionality 40 / Security 25 / Craft 20 / Consistency 15
+        ↓
+<b>/moai sync SPEC-AUTH-001</b>   → docs, CHANGELOG, conventional commit, PR
+</div>
+
+<h3>The five ideas underneath it</h3>
+<table>
+  <thead><tr><th>Idea</th><th>What it means in practice</th></tr></thead>
+  <tbody>
+    <tr><td><b>Verification&#8209;claim integrity</b></td><td>"tests pass" must be bound to the command actually run and its output. You may not present an unrun check as success, nor pass off a stale measurement as fresh. Enforced through a mandatory <b>5&#8209;section report</b>: Claim · Evidence · Baseline attribution · Gaps · Residual risk.</td></tr>
+    <tr><td><b>Author ≠ auditor</b></td><td><code>manager-spec</code> writes the SPEC; <code>plan-auditor</code> grades it. <code>manager-develop</code> writes code; <code>sync-auditor</code> grades it. The writing side never grades its own work.</td></tr>
+    <tr><td><b>TRUST 5 gate</b></td><td>Tested · Readable · Unified · Secured · Trackable. One command runs lint + format + types + tests. Their bar: ≥85% coverage, 0 lint errors, 0 type errors, conventional commits.</td></tr>
+    <tr><td><b>Long&#8209;horizon continuity</b></td><td>Work survives <code>/clear</code> because state lives on disk: <code>progress.md</code> per unit of work, handoff messages, decision memory.</td></tr>
+    <tr><td><b>Context isolation</b></td><td>Kanban Mode splits one task across <b>four hand&#8209;launched terminals</b> (lead + plan + run + sync) so no session carries three phases of history. Factory Mode runs N such lanes in parallel worktrees.</td></tr>
+  </tbody>
+</table>
+
+<h3>And the machinery around it</h3>
+<p>
+A 12&#8209;agent catalog with per&#8209;agent model×effort cells; a self&#8209;hosted MCP server exposing 21
+tools; <code>moai web</code> with 6 screens and 11 settings tabs; Claude&#8209;leader/GLM&#8209;worker
+routing claiming 60–70% savings; marker&#8209;based detection for 16 languages; an
+<code>@MX</code>/<code>@NAV</code> tag graph building <code>nav-graph.json</code>; a goal engine with
+turn limits, stagnation guards and wall&#8209;clock budgets; an append&#8209;only JSONL "Origin&#8209;Trail
+Chain" tracking worktree ancestry; a self&#8209;improvement loop promoting observed failures into
+proposed rule changes.
+</p>
+
+<p class="note">
+<b>Read the incentives.</b> The README pushes a z.ai GLM referral link in three places and states that
+sign&#8209;up rewards fund the project. That does not make the engineering wrong, but a meaningful
+share of the design — CG mode, multi&#8209;LLM routing, the whole tokenomics chapter — solves a cost
+problem partly created by running 12 agents where 4 would do.
+</p>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2 id="thesis"><span class="n">02</span>Keep / drop</h2>
+
+<div class="grid2">
+  <div class="card keep">
+    <h3>Keep — carries the value</h3>
+    <ul>
+      <li><b>plan → run → sync.</b> Forcing a written spec before code is the highest&#8209;leverage
+          habit in the system. <span class="tag a">phase 2</span></li>
+      <li><b>Author ≠ auditor.</b> A second agent with fresh context and no stake catches what the
+          writer structurally cannot. The one place extra agents genuinely pay.
+          <span class="tag a">phase 2</span></li>
+      <li><b>Evidence&#8209;bound claims.</b> Costs nothing, attacks the failure mode you actually hit:
+          an agent asserting green tests it never ran. <span class="tag g">shipped</span></li>
+      <li><b>One gate command.</b> A single entry point that builds, tests and checks format, whose
+          raw output is the evidence. <span class="tag g">shipped</span></li>
+      <li><b>On&#8209;disk progress.</b> State that survives compaction. <span class="tag a">phase 2</span></li>
+    </ul>
+  </div>
+  <div class="card drop">
+    <h3>Drop — cost without return here</h3>
+    <ul>
+      <li><b>Kanban / Factory / worktrees.</b> Four terminals exist to give each phase a clean
+          context. opencode's <code>task</code> tool already spawns subagents in isolated child
+          sessions. <span class="tag r">solved natively</span></li>
+      <li><b>MCP server + web console.</b> 21 tools and 6 screens of surface to maintain.</li>
+      <li><b>Multi&#8209;LLM cost routing.</b> opencode sets <code>model</code> per agent in one line of
+          frontmatter.</li>
+      <li><b>16&#8209;language auto&#8209;detection.</b> This repo is CMake + C++23 + MSVC. One toolchain,
+          hardcoded.</li>
+      <li><b>@MX / Navigator graph.</b> A second index to keep in sync with the code.</li>
+      <li><b>Goal engine, self&#8209;improvement loop, decision memory, Origin&#8209;Trail Chain.</b>
+          Problems you do not have yet.</li>
+      <li><b>20 agents / 52 skills.</b> Every agent is context the model weighs before acting. A
+          large catalog degrades routing accuracy.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2 id="mapping"><span class="n">03</span>Concept → opencode primitive</h2>
+
+<table>
+  <thead><tr><th>MoAI&#8209;ADK</th><th>opencode equivalent</th><th>Verdict</th></tr></thead>
+  <tbody>
+    <tr><td><code>/moai plan|run|sync</code></td><td><span class="path">.opencode/command/*.md</span></td><td><span class="tag g">1:1</span></td></tr>
+    <tr><td>12&#8209;agent catalog</td><td><span class="path">.opencode/agent/*.md</span>, <code>mode: subagent</code></td><td><span class="tag g">1:1, cut to 2</span></td></tr>
+    <tr><td>18 ref/domain skills</td><td><span class="path">.opencode/skills/&lt;name&gt;/SKILL.md</span></td><td><span class="tag g">1:1, cut to 3</span></td></tr>
+    <tr><td>Kanban Mode (4 terminals)</td><td><code>task</code> tool → subagent child sessions</td><td><span class="tag a">native, simpler</span></td></tr>
+    <tr><td>Factory Mode (N lanes)</td><td>Parallel <code>task</code> calls in one message</td><td><span class="tag a">native</span></td></tr>
+    <tr><td>Model × effort routing</td><td><code>model:</code> / <code>temperature:</code> / <code>steps:</code> in frontmatter</td><td><span class="tag a">native</span></td></tr>
+    <tr><td>Read&#8209;only auditor agents</td><td><code>permission: { edit: deny, bash: {…} }</code></td><td><span class="tag a">native, enforced</span></td></tr>
+    <tr><td>Hooks that block bad tool calls</td><td>Plugin <code>tool.execute.before</code>, or a git hook</td><td><span class="tag">T&#8209;025</span></td></tr>
+    <tr><td>Survives <code>/clear</code></td><td><span class="path">.spec/&lt;ID&gt;/progress.md</span> + <code>instructions</code></td><td><span class="tag a">phase 2</span></td></tr>
+    <tr><td><code>moai init</code> wizard</td><td>Copy a directory</td><td><span class="tag r">not needed</span></td></tr>
+    <tr><td>MCP server, web console, Origin&#8209;Trail Chain</td><td>—</td><td><span class="tag r">dropped</span></td></tr>
+  </tbody>
+</table>
+
+<p>
+The important row is <b>Kanban Mode</b>. MoAI&#8209;ADK's flagship v3.1 feature — four terminals, a
+run&#8209;id, a lead that may only advance cards on evidence it read because "inter&#8209;session delivery
+is not guaranteed" — is an elaborate workaround for one thing: Claude Code's main session
+accumulating all three phases of context. opencode's <code>task</code> tool gives each subagent a
+fresh window and returns one message to the parent. You get the context hygiene without the
+terminals, run&#8209;ids, heartbeats or lineage tree.
+</p>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2 id="gate"><span class="n">04</span>The real gate <span class="tag g">measured, not guessed</span></h2>
+
+<p>
+The first draft of this proposal guessed <code>cmake --preset</code> + <code>ctest --preset</code>.
+Both are wrong for this repo. What follows was established by running it.
+</p>
+
+<h3>What the investigation found</h3>
+<table>
+  <thead><tr><th>Assumption</th><th>Reality</th></tr></thead>
+  <tbody>
+    <tr><td><code>ctest</code> runs the tests</td><td><b>ctest does not work at all.</b> No <code>enable_testing()</code> or <code>add_test()</code> in <code>CMakeLists.txt</code>. Tests are doctest cases compiled <i>into</i> the application and run with <code>test.exe --test</code>.</td></tr>
+    <tr><td><code>cmake --build --preset x64-debug</code></td><td><b>Fails.</b> <code>CMakePresets.json</code> declares configure presets only — no <code>buildPresets</code>, no <code>testPresets</code>. Must use <code>cmake --build out/build/x64-debug</code>.</td></tr>
+    <tr><td>cmake / clang&#8209;format on PATH</td><td><b>Neither is.</b> Both ship inside Visual Studio. Located via <code>vswhere.exe</code>; <code>cl.exe</code> additionally needs the VS developer environment (<code>Enter-VsDevShell</code>) for <code>INCLUDE</code>/<code>LIB</code>.</td></tr>
+    <tr><td>Exit 0 means tests passed</td><td><b>Not sufficient.</b> <code>test/mvp_gaps_test.h</code> marks 4 known MVP gaps with doctest <code>may_fail</code>. They print <code>ERROR:</code>, then <code>Allowed to fail so marking it as not failed</code>, and the run still exits 0. The doctest summary lines must be read.</td></tr>
+    <tr><td>Format is a clean gate</td><td><b>44 of 80</b> tracked files under <code>src/</code> and <code>test/</code> fail the newly added <code>.clang-format</code>. A repo&#8209;wide check fails on day one, so the gate defaults to changed files only.</td></tr>
+    <tr><td>clang&#8209;tidy is available</td><td>Binary exists, but there is no <code>.clang-tidy</code> and no <code>compile_commands.json</code>. Not in the gate — claiming static analysis ran would be a false claim.</td></tr>
+  </tbody>
+</table>
+
+<h3>Verified baseline — 2026&#8209;08&#8209;28, <code>x64&#8209;debug</code></h3>
+<pre><code>$ pwsh -File scripts/gate.ps1
+
+=== GATE SUMMARY ==================================================
+PASS   configure  exit 0    skipped: CMakeCache.txt present
+PASS   build      exit 0    0 first-party warning(s)
+PASS   test       exit 0    [doctest] test cases: 22 | 22 passed | 0 failed | 0 skipped
+                            [doctest] assertions: 97 | 93 passed | 4 failed
+                            may_fail assertions: 4
+FAIL   format     exit 1    1/1 non-conformant
+  src/main.cpp
+
+GATE: FAIL (format)</code></pre>
+
+<p class="note ok">
+<b>That FAIL is correct.</b> <code>src/main.cpp</code> is the only file modified in the working tree
+and it does not conform to the <code>.clang-format</code> that was just added. The gate found a real
+finding on its first run against real code — which is the entire point.
+</p>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2 id="shipped"><span class="n">05</span>What Phase 1 ships <span class="tag g">T&#8209;019</span></h2>
+
+<pre><code>scripts/
+  gate.ps1                      the gate. Locates VS via vswhere, enters the dev shell,
+                                configures/builds/tests/format-checks, prints a summary
+                                with an exit code per step, exits non-zero on any failure.
+
+.opencode/
+  skills/
+    quality-gate/SKILL.md       how to run the gate, the verified baseline, and the six
+                                things about this repo that will otherwise mislead an agent
+    evidence-report/SKILL.md    the integrity rule + the 5-section report format
+  command/
+    gate.md                     /gate — runs the script as a subtask and reports the evidence
+
+opencode.json                   permissions: gate + read-only git pre-approved,
+                                everything else asks; external_directory denied
+
+docs/
+  proposals/spec-flow.html      this document
+  status/tracker.md             T-019 done; T-020…T-029 opened
+</code></pre>
+
+<h3>Design notes</h3>
+<ul>
+  <li><b>The script is the gate, not the prose.</b> MoAI&#8209;ADK describes its gate in agent
+      instructions, which means every run reassembles it from natural language and drifts.
+      <code>gate.ps1</code> is one command with a deterministic output format. The skill tells the
+      agent to run <i>it</i> and explicitly forbids hand&#8209;rolled substitutes.</li>
+  <li><b>Format scope defaults to changed files.</b> <code>-Scope Branch</code> widens to the
+      merge&#8209;base with <code>origin/main</code> for PR time; <code>-Scope All</code> exists purely
+      to audit the 44&#8209;file debt (T&#8209;021). This keeps the gate green&#8209;able today without
+      pretending the debt is gone.</li>
+  <li><b>Build warnings are filtered to first&#8209;party code.</b> Warnings from <code>external/</code>
+      (glfw, imgui, glaze, libpqxx) are noise you cannot fix.</li>
+  <li><b>The <code>may_fail</code> count is reported explicitly.</b> A change in that number is a
+      signal — either a gap closed, or someone deleted a marker.</li>
+  <li><b>No agents in Phase 1.</b> Zero new subagents, zero model routing. The evidence discipline
+      is testable on its own before the SPEC ceremony is added.</li>
+</ul>
+
+<h3>Using it</h3>
+<pre><code># in opencode
+/gate
+/gate -Scope Branch
+
+# directly
+pwsh -File scripts/gate.ps1
+pwsh -File scripts/gate.ps1 -SkipFormat      # fast build+test loop
+pwsh -File scripts/gate.ps1 -Reconfigure     # after editing CMakeLists.txt
+pwsh -File scripts/gate.ps1 -Clean           # ~10 min, rebuilds vendored deps
+pwsh -File scripts/gate.ps1 -Scope All       # audit format debt; expected to fail</code></pre>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2 id="phase2"><span class="n">06</span>Phase 2 design <span class="tag a">T&#8209;027, not yet built</span></h2>
+
+<p>One SPEC per feature branch, per the decision on record.</p>
+
+<pre><code>.opencode/
+  agent/
+    spec-auditor.md      subagent · edit:deny · grades a SPEC it did not write
+    verifier.md          subagent · edit:deny · runs gate.ps1, writes the evidence report
+  command/
+    plan.md              /plan "&lt;description&gt;"  → author + independently audit a SPEC
+    run.md               /run                    → implement the current branch's SPEC
+  skills/
+    spec-format/SKILL.md EARS-lite template, acceptance-criteria rules, S/M/L tiers
+
+.spec/
+  spec.md                one per feature branch. Merged selectively into main.
+  progress.md            append-only: what ran, what it printed, what is left</code></pre>
+
+<div class="flow">git switch -c <b>feat/tls-timeout</b>
+
+you  <b>/plan  handshake should time out after 30s instead of hanging</b>
+     ├─ @explore                  locates the code; does not guess at current behaviour
+     ├─ writes                    .spec/spec.md   (Tier M, 4 requirements, 3 acceptance criteria)
+     ├─ @spec-auditor             <u>DEBT</u> — "A2 names no verifying command"
+     │                                   — "R3 'promptly' is ambiguous"
+     ├─ fixes both
+     └─ @spec-auditor             <i>PASS</i>
+     → 90 seconds. No code written.
+
+you  <b>/run</b>
+     ├─ writes failing tests from the acceptance criteria, pastes the failure output
+     ├─ implements
+     ├─ @verifier                 runs gate.ps1 itself — the implementer's word does not count
+     │                            build exit 0 · test 25/25 · format exit 0
+     │                            Gaps: clang-tidy not run (T-023)
+     │                            Residual risk: no test for timeout during renegotiation
+     └─ appends the report to .spec/progress.md
+
+merge to main, keeping what is worth keeping from .spec/</div>
+
+<p class="note">
+<b>The one non&#8209;negotiable rule.</b> The <code>implementer</code> may say "I ran the gate"; that is
+a claim. <code>gate.ps1</code> produces the exit code and output; that is evidence. A SPEC advances
+only on evidence that was read. Everything else in this proposal is convenience — this is the part
+that changes outcomes.
+</p>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2 id="limits"><span class="n">07</span>Limitations → tracker</h2>
+
+<p>Every limitation identified is now a task in <a href="../status/tracker.md">docs/status/tracker.md</a>.</p>
+
+<table>
+  <thead><tr><th>ID</th><th>Limitation</th><th>Pri</th></tr></thead>
+  <tbody>
+    <tr><td class="tid">T&#8209;020</td><td>Clean&#8209;build warning count never measured. The "0 new first&#8209;party warnings" threshold is currently checked against incremental builds only, so already&#8209;compiled translation units are not re&#8209;examined.</td><td>P1</td></tr>
+    <tr><td class="tid">T&#8209;021</td><td>44 of 80 tracked <code>src/</code>+<code>test/</code> files fail <code>clang-format</code>. Until that is decided (bulk reformat vs. leave), the gate cannot run <code>-Scope All</code>.</td><td>P1</td></tr>
+    <tr><td class="tid">T&#8209;022</td><td>Test headers are <code>#include</code>d by hand in <code>src/main.cpp</code>. A new <code>test/*_test.h</code> that is not added there silently never runs, and nothing catches it.</td><td>P1</td></tr>
+    <tr><td class="tid">T&#8209;023</td><td>No static analysis. Needs <code>.clang-tidy</code> + <code>CMAKE_EXPORT_COMPILE_COMMANDS</code> before it can become a gate step.</td><td>P2</td></tr>
+    <tr><td class="tid">T&#8209;024</td><td>No coverage measurement, so no coverage threshold. MoAI&#8209;ADK's 85% bar is not portable to MSVC without work.</td><td>P2</td></tr>
+    <tr><td class="tid">T&#8209;025</td><td><b>The gate is advisory.</b> Nothing prevents a commit that skipped it. A git <code>pre-commit</code> hook binds regardless of which agent — or human — is driving; an opencode plugin would only bind agents.</td><td>P1</td></tr>
+    <tr><td class="tid">T&#8209;026</td><td>Model routing (opus&#8209;5 ceiling / sonnet floor) not wired — needs the exact provider model IDs confirmed.</td><td>P2</td></tr>
+    <tr><td class="tid">T&#8209;027</td><td>Phase 2 itself: SPEC format, <code>.spec/</code>, <code>/plan</code>, <code>/run</code>, auditor + verifier agents.</td><td>P1</td></tr>
+    <tr><td class="tid">T&#8209;028</td><td>Author≠auditor and "evidence, not claims" are conventions the primary agent must honour. They should live in <code>docs/ai-instructions.md</code> so they load in every session, not only in the command that happens to be invoked.</td><td>P2</td></tr>
+    <tr><td class="tid">T&#8209;029</td><td><code>ctest</code> is not wired. Decide whether to wire it or document the app&#8209;binary invocation as permanent.</td><td>P2</td></tr>
+  </tbody>
+</table>
+
+<h3>Known and accepted, not tracked</h3>
+<ul>
+  <li><b>Restart required.</b> opencode loads config once at startup. Editing a skill, command or
+      agent needs a quit and relaunch.</li>
+  <li><b>Cost goes up in Phase 2.</b> Two extra subagent round&#8209;trips per SPEC. MoAI&#8209;ADK's
+      answer is cheap workers; ours is fewer agents. Whether the SPECs prevent enough rework to pay
+      for it is a claim neither project has measured.</li>
+  <li><b>Windows&#8209;only gate.</b> <code>gate.ps1</code> assumes MSVC and Visual Studio. The
+      Linux/macOS presets exist in <code>CMakePresets.json</code> but are not covered.</li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<h2 id="decisions"><span class="n">08</span>Decisions on record</h2>
+
+<table>
+  <thead><tr><th>#</th><th>Question</th><th>Decision</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>How much to adopt?</td><td><b>Phase 1 only.</b> Gate + evidence discipline. No agents, no SPEC ceremony until Phase 1 has proven itself.</td></tr>
+    <tr><td>2</td><td>Global or project scope?</td><td><b>Project.</b> Everything lives under <span class="path">C:\repo\test_framework\</span> and is committed, so a clone gets it.</td></tr>
+    <tr><td>3</td><td>What is the real gate?</td><td><b>Resolved by measurement</b> — see §04. Configure + build + <code>test.exe --test</code> + <code>clang-format</code> on changed files. <code>ctest</code> and <code>clang-tidy</code> are explicitly out.</td></tr>
+    <tr><td>4</td><td>Where do SPECs live?</td><td><b>One SPEC per feature branch</b> in <span class="path">.spec/</span>, merged selectively into <code>main</code>. Phase 2.</td></tr>
+    <tr><td>5</td><td>Model routing?</td><td><b>Claude Opus 5 as ceiling, Claude Sonnet as floor.</b> Ceiling for authoring and auditing, floor for mechanical implementation and gate runs. Deferred to T&#8209;026 pending exact provider model IDs.</td></tr>
+    <tr><td>6</td><td>File placement?</td><td><b>Everything inside the repo, traceable by git.</b> No agent&#8209;generated artefacts outside the worktree; <code>external_directory</code> is denied in <code>opencode.json</code>.</td></tr>
+  </tbody>
+</table>
+
+<footer>
+  <b>Sources.</b>
+  <a href="https://github.com/modu-ai/moai-adk">github.com/modu-ai/moai-adk</a> (v3.1.3, Go) ·
+  <a href="https://pypi.org/project/moai-adk/">pypi.org/project/moai-adk</a> (v1.14.5, Python) ·
+  <a href="https://adk.mo.ai.kr">adk.mo.ai.kr</a> ·
+  <a href="https://opencode.ai/docs/agents/">opencode.ai/docs</a> — agents, skills, commands, config schema.
+  <br><br>
+  <b>Provenance.</b> The baseline in §04 was produced by running <code>scripts/gate.ps1</code> against
+  commit <code>HEAD</code> of this repository on 2026&#8209;08&#8209;28, with <code>src/main.cpp</code>
+  modified in the working tree. Phase 2 in §06 is a design, not an implementation.
+</footer>
+
+</div>
+</body>
+</html>

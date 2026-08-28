@@ -1,5 +1,5 @@
 ---
-last-updated: 14-02-2025
+last-updated: 2026-08-28
 owner: copilot
 status: active
 ---
@@ -39,6 +39,7 @@ project. It is **not** application source code and is intentionally kept out of
 | [`status/tracker.md`](status/tracker.md) | Task board — single source of truth |
 | [`plans/mvp-roadmap.md`](plans/mvp-roadmap.md) | Phased path to MVP |
 | [`plans/export-format.md`](plans/export-format.md) | Portable export schema proposal |
+| [`proposals/spec-flow.html`](proposals/spec-flow.html) | `spec-flow` harness: research, design, verified gate baseline (D-005) |
 
 ## Conventions
 
@@ -56,6 +57,15 @@ project. It is **not** application source code and is intentionally kept out of
   build and profiling facts; if this workspace drifts, reconcile toward it.
 - **No code here:** this folder holds documentation only. Code changes belong in
   `src/` and must be tracked as their own task.
+- **Everything inside the repo:** agents must not create or modify files outside
+  this worktree. All artifacts — proposals, reports, scripts, agent config — are
+  committed and traceable by git. Enforced by `external_directory: deny` in
+  [`../opencode.json`](../opencode.json).
+- **Evidence, not claims:** before asserting that a build, test run or check
+  passed, run [`../scripts/gate.ps1`](../scripts/gate.ps1) (or `/gate` in
+  opencode) and report using the five-section format in
+  `.opencode/skills/evidence-report/SKILL.md`. A check that was not run belongs
+  under *Gaps*, never under *Evidence*. See D-005.
 
 ## Doc lifecycle (keep docs lean)
 

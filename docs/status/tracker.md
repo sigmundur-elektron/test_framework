@@ -1,5 +1,5 @@
 ---
-last-updated: 2025-02-16
+last-updated: 2026-08-28
 owner: copilot
 status: active
 ---
@@ -29,6 +29,16 @@ Phase maps to the [MVP roadmap](../plans/mvp-roadmap.md).
 | T-016 | Make `itool::schema` a serializable struct instead of a raw string (Q6) | 2 | P1 | — | 2025-02-16 |
 | T-017 | Implement `mcp_client` transport (handshake + tool discovery) (Q7) | 2 | P0 | — | 2025-02-16 |
 | T-018 | CI/CD pipeline (planned, not implemented) (Q14) | 5 | P2 | — | 2025-02-16 |
+| T-020 | Measure clean-build warning count; make "0 new first-party warnings" a real gate threshold | 0 | P1 | — | 2026-08-28 |
+| T-021 | Format debt: 44 of 80 tracked `src/`+`test/` files fail `clang-format`. Decide bulk-reformat vs. leave, then widen gate `-Scope` to `All` | 0 | P1 | — | 2026-08-28 |
+| T-022 | Test files are `#include`d by hand in `src/main.cpp`; a new `test/*_test.h` silently never runs. Auto-discover or assert an expected test-case count | 0 | P1 | — | 2026-08-28 |
+| T-023 | No static analysis: add `.clang-tidy` + `CMAKE_EXPORT_COMPILE_COMMANDS`, then add a gate step | 0 | P2 | — | 2026-08-28 |
+| T-024 | No coverage measurement. Decide whether coverage is a gate threshold at all on MSVC | 0 | P2 | — | 2026-08-28 |
+| T-025 | Gate is advisory only — nothing blocks a commit that skipped it. Add a git `pre-commit` hook running `scripts/gate.ps1` | 0 | P1 | — | 2026-08-28 |
+| T-026 | Wire spec-flow model routing (opus-5 ceiling / sonnet floor) in `opencode.json`; needs exact provider model IDs confirmed | 0 | P2 | — | 2026-08-28 |
+| T-027 | spec-flow Phase 2: `spec-format` skill, `.spec/` per feature branch, `/plan` + `/run`, `spec-auditor` + `verifier` agents | 0 | P1 | — | 2026-08-28 |
+| T-028 | Author≠auditor and "evidence, not claims" are conventions the primary agent must honour; restate them in `docs/ai-instructions.md` so they load every session | 0 | P2 | — | 2026-08-28 |
+| T-029 | `ctest` is not wired (`enable_testing()`/`add_test()` absent, no build/test presets). Decide whether to wire it or document the app-binary invocation as permanent | 0 | P2 | — | 2026-08-28 |
 
 ## In Progress
 
@@ -51,3 +61,4 @@ Phase maps to the [MVP roadmap](../plans/mvp-roadmap.md).
 | T-007 | Freeze export schema v1 (`tf.agent-export`); see `plans/export-format.md` | 4 | copilot | 2025-02-15 |
 | T-008 | Implement export command `agent_service::export_setup` (Glaze JSON) | 4 | copilot | 2025-02-15 |
 | T-013 | DocTest coverage for export (`test/agent_export_test.h`) | 4 | copilot | 2025-02-15 |
+| T-019 | spec-flow Phase 1: `scripts/gate.ps1`, `quality-gate` + `evidence-report` skills, `/gate` command, `opencode.json` | 0 | opencode | 2026-08-28 |
