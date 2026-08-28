@@ -13,7 +13,7 @@
 
 // Compile-time default (handy while debugging). Overridden at runtime by the
 // -t / --test command-line flag.
-const bool testing = true;
+const bool testing = false;
 static app a;
 
 static bool wants_tests(int argc, char **argv)
