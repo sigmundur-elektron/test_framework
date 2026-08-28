@@ -34,22 +34,28 @@ One sentence. What you assert is now true.
 For each check: the exact command, its exit code, and the relevant output.
 Paste real output. Do not paraphrase it.
 
+The transcripts in this skill are **illustrative shapes, not current facts** —
+their numbers are frozen examples. Never copy a count from here into a report.
+The live values come from your own run, checked against `scripts/baseline.json`.
+
 ```
 $ python scripts/gate.py
 === GATE SUMMARY ==================================================
 PASS   configure  exit 0    skipped: CMakeCache.txt present
 PASS   build      exit 0    0 first-party warning(s)
-PASS   test       exit 0    test cases: 22 | 22 passed | 0 failed | 0 skipped ;;
-                            assertions: 97 | 93 passed | 4 failed ;; may_fail assertions: 4
+PASS   test       exit 0    test cases: N | N passed | 0 failed | 0 skipped ;;
+                            assertions: N | N passed | N failed ;; may_fail assertions: N
 PASS   format     exit 0    0/3 non-conformant
+BASELINE: MATCH
 GATE: PASS
 ```
 
 ### Baseline attribution
 What the numbers were before your change, and where that baseline came from.
-The recorded baseline for this repo lives in the `quality-gate` skill. If you did
-not measure a baseline, write **"no baseline measured"** — do not imply an
-improvement you cannot show.
+The recorded baseline lives in `scripts/baseline.json`, and `gate.py` compares
+against it for you — quote its `BASELINE:` line rather than numbers you
+remember. If you did not measure a baseline, write **"no baseline measured"** —
+do not imply an improvement you cannot show.
 
 ### Gaps
 Checks that were skipped, could not run, or ran only partially, and why. Be
@@ -70,15 +76,16 @@ for a GUI, threading, or persistence change it almost never does.
 > ```
 > $ python scripts/gate.py
 > PASS   build      exit 0    0 first-party warning(s)
-> PASS   test       exit 0    22 passed | 0 failed ;; may_fail assertions: 4
+> PASS   test       exit 0    N passed | 0 failed ;; may_fail assertions: N
 > FAIL   format     exit 1    1/1 non-conformant
 >   src/main.cpp
+> BASELINE: MATCH
 > GATE: FAIL (format)
 > ```
 >
-> **Baseline attribution** — Matches the recorded baseline for build and test
-> (22 cases / 97 assertions / 4 may_fail). Format has no clean baseline: 44 of 80
-> tracked files were already non-conformant before this change (T-021).
+> **Baseline attribution** — `BASELINE: MATCH` against `scripts/baseline.json`,
+> so build and test are unchanged. Format has no clean baseline: most tracked
+> files were already non-conformant before this change (T-021).
 >
 > **Gaps** — clang-tidy not run (no `.clang-tidy`, no `compile_commands.json`).
 > No coverage measurement. Build was incremental, so warnings in already-compiled

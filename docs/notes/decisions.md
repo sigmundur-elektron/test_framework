@@ -10,6 +10,92 @@ Append one entry per non-trivial decision. Newest at top.
 
 ---
 
+## D-009 — Baseline facts move into `scripts/baseline.json`; `implementer` is kept but constrained
+**Status:** accepted
+**Date:** 2026-08-28
+
+**Context.** Two defects found while auditing the harness, both of the class
+spec-flow exists to prevent — a confident statement that is not true.
+
+1. **The baseline had drifted three ways.** The measured facts were copied as
+   prose into four documents. Measured on this commit: 26 test cases, 115
+   assertions, **3** `may_fail`, **38 of 81** files non-conformant. But
+   `verifier.md:61` asserted *"The recorded baseline is 4"* and instructed the
+   verifier to flag any deviation — so **the verifier produced a false finding on
+   every run**. `ai-instructions.md` said 4 gaps and 44/80; `quality-gate`
+   said 3 and 38/80; `evidence-report`'s worked example said 4 and 44/80.
+2. **`--scope branch` was silently broken** (T-041). `gate.py` defaulted to
+   `--base-ref origin/main`; this repo is based on `master`. `files_in_scope`
+   printed a warning and fell back to "modified vs HEAD" — so the *pre-PR* scope
+   quietly became the *narrowest* scope, at exactly the moment the widest was
+   wanted.
+
+Separately, `.opencode/agents/implementer.md` was added in `422d792` with
+`permission.bash: {"*": allow}`, overriding `opencode.json`'s repo-wide `ask`,
+and contradicted **D-006**, which decided *"No `implementer` subagent."*
+
+**Decision.**
+
+1. **`scripts/baseline.json` is the single source of truth** for measured facts.
+   `gate.py` parses the doctest summary into real numbers and compares, printing
+   `BASELINE: MATCH` / `AHEAD` / `DRIFT` in the summary block.
+   - A **drop** in coverage, any change in `may_fail`, a new first-party warning,
+     or growth in format debt is **DRIFT** and fails the gate.
+   - **Growth** is `AHEAD`: reported, not punished, with a prompt to re-record.
+   - Re-recording is explicit (`--update-baseline`), never automatic.
+   - Every prose copy of these numbers is deleted and replaced by a pointer.
+2. **The base ref is auto-detected** from `origin/HEAD` (falling back to
+   `origin/master`, then `origin/main`). A `--scope branch` run whose base ref
+   does not resolve **fails the format step** instead of narrowing scope.
+3. **`implementer` is kept, reversing D-006's "no implementer" clause**, but
+   constrained: its `bash` block is removed entirely so it inherits
+   `opencode.json`'s `ask` policy, and its prompt now requires loading
+   `quality-gate` / `evidence-report`, running `scripts/gate.py` rather than
+   hand-rolled cmake, and handing off to `@verifier`.
+
+**Rationale.**
+
+- D-006 argued a third subagent "buys a context hop but no independence".
+  That is still true *for independence* — and independence is not why an
+  implementer is useful. A primary agent carrying domain instructions is a
+  different thing from a subagent claiming to verify itself. Independence still
+  comes only from `@verifier`, which is unchanged.
+- Rejected *hand-writing a bash allowlist* for the implementer mirroring the
+  verifier's: two allowlists drift, and the repo-wide `ask` policy already
+  expresses the intent. Removing the block is strictly less surface.
+- Rejected *keeping the baseline in the skill and just correcting it*: that is
+  what was already tried. It drifted because a number in a sentence has no
+  mechanism keeping it honest. A number a machine reads does.
+- Rejected *making `may_fail` drift a warning*: a drop can mean a gap was closed
+  **or** that someone deleted the marker, and nothing in the output distinguishes
+  them. Only a human can, so it must stop the gate.
+
+**Impact.**
+- New: `scripts/baseline.json`.
+- `scripts/gate.py`: `parse_counts`, `parse_doctest`, `load_baseline`,
+  `compare_baseline`, `write_baseline`, `default_base_ref`; `files_in_scope`
+  returns a `resolved` flag; `--update-baseline` added; `--base-ref` now
+  defaults to `None` and is resolved at runtime.
+- Prose baselines removed from `quality-gate`, `evidence-report`, `verifier.md`
+  and `docs/ai-instructions.md`. D-005's figures annotated as historical.
+- `implementer.md`: `bash` permission removed, harness section added.
+- Tracker: T-045, T-041 done; T-021 corrected 44/80 → 38/81;
+  T-046…T-051 opened.
+
+**Verification.** Drift detection was tested by planting defects, not asserted:
+`may_fail: 4` → `BASELINE: DRIFT (may_fail 3, expected 4)` / `GATE: FAIL
+(baseline)` / exit 1. `test_cases: 25` → `BASELINE: AHEAD (test_cases 26, was
+25)` / `GATE: PASS` / exit 0. `--base-ref origin/does-not-exist --scope branch`
+→ `FAIL format exit 1 unresolved base ref`, where the old code printed a warning
+and passed.
+
+**Consequences.** The gate can now fail for a reason unrelated to the code under
+test — a deliberate test addition fails until the baseline is re-recorded. That
+friction is the point: it forces the count change to be acknowledged. The
+`AHEAD` path exists so that improvement is never punished, only noticed.
+
+---
+
 ## D-008 — Permissions reach tools as a parameter on `itool::execute`; `agent::execute_step` becomes public
 **Status:** accepted
 **Date:** 2026-08-28
@@ -304,6 +390,11 @@ the proposal guessed `cmake --preset` + `ctest --preset`; both are wrong here:
 Recorded baseline (`x64-debug`, 2026-08-28): build exit 0 / 0 first-party
 warnings; 22 test cases, 22 passed; 97 assertions, 93 passed, 4 `may_fail`;
 44 of 80 tracked `src/`+`test/` files fail `clang-format`.
+
+> **Historical — do not quote.** Those were the numbers *at the time of D-005*.
+> The live measured baseline is `scripts/baseline.json`, which `gate.py` checks
+> automatically (T-045). This paragraph is preserved as a record of what was
+> true then, not as a current fact.
 
 **Rationale.**
 - A gate expressed as *prose in agent instructions* is reassembled from natural

@@ -55,15 +55,22 @@ You cannot write to `progress.md`. Return the report; the caller appends it.
 ## What to look at, beyond the exit code
 
 - The `GATE SUMMARY` block — paste it verbatim under Evidence.
-- The doctest counts. Exit 0 alone is not a pass: `test/mvp_gaps_test.h` marks 4
+- **The `BASELINE:` line.** `gate.py` compares the run against
+  `scripts/baseline.json` itself, so you do not carry the numbers in your head
+  and cannot report a stale one:
+  - `BASELINE: MATCH` — nothing to say.
+  - `BASELINE: AHEAD (...)` — an improvement. Report it and note that the
+    baseline needs re-recording; it is **not** a failure.
+  - `BASELINE: DRIFT (...)` — the gate already failed. Quote the line verbatim
+    and say which field moved and in which direction. A `may_fail` drop can mean
+    a gap was genuinely closed or that someone deleted the marker; say you cannot
+    distinguish those without reading the diff.
+- The doctest counts. Exit 0 alone is not a pass: `test/mvp_gaps_test.h` marks
   known gaps `may_fail`, so they print `ERROR:` and the run still exits 0.
-- **The `may_fail assertions:` count.** The recorded baseline is 4. If it changed,
-  say so explicitly and say which direction — a drop can mean a gap was genuinely
-  closed, or that someone deleted the marker.
-- The test-case and assertion totals against the baseline in the `quality-gate`
-  skill. New tests should raise them; a drop is a finding.
 - Whether the format step failed on files the change did not touch. Report that
   as such; do not treat unrelated pre-existing debt as this change's failure.
+- Whether the format step reports `unresolved base ref` — that means the branch
+  scope could not be computed, not that the tree is clean.
 
 ## Rules
 

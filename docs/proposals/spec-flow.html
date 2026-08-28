@@ -88,8 +88,19 @@
     <span class="badge ok">phase 2: implemented — T&#8209;027</span>
     <span class="badge">scope: project&#8209;local</span>
     <span class="badge">2026&#8209;08&#8209;28</span>
+    <span class="badge a">figures: historical - see scripts/baseline.json</span>
   </div>
 </header>
+
+<p class="lede" style="border-left:3px solid #2d5b7a;padding-left:14px">
+<b>Every measured number in this document is historical.</b> The figures below
+(<code>22</code>/<code>97</code> doctest counts, <code>may_fail assertions: 4</code>,
+<code>44 of 80</code> non&#8209;conformant files) were true when this proposal was written and
+are preserved as a record of what was measured then. They are <b>not</b> current and must not be
+quoted. The live measured baseline is <code>scripts/baseline.json</code>, which
+<code>scripts/gate.py</code> checks automatically on every run and reports as
+<code>BASELINE: MATCH</code> / <code>AHEAD</code> / <code>DRIFT</code> (D&#8209;009, T&#8209;045).
+</p>
 
 <p class="lede">
 MoAI&#8209;ADK is a 4,400&#8209;commit Go binary that wraps Claude Code with 12 agents, 18+ skills, an MCP

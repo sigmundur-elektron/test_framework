@@ -21,11 +21,12 @@ Useful variants:
 | Command | When |
 |---|---|
 | `python scripts/gate.py` | default — format check covers files changed vs `HEAD` plus untracked |
-| `python scripts/gate.py --scope branch` | before opening a PR — covers everything changed vs `origin/main` |
+| `python scripts/gate.py --scope branch` | before opening a PR — covers everything changed vs the base branch, auto-detected from `origin/HEAD` (this repo: `origin/master`). An unresolvable base ref **fails** rather than silently narrowing the scope. |
 | `python scripts/gate.py --skip-format` | fast build+test loop while iterating |
 | `python scripts/gate.py --reconfigure` | after editing `CMakeLists.txt` or `CMakePresets.json` |
 | `python scripts/gate.py --clean` | suspected stale build; ~10 minutes, rebuilds all vendored deps |
 | `python scripts/gate.py --scope all` | auditing repo-wide format debt only — **expected to fail**, see T-021 |
+| `python scripts/gate.py --scope all --update-baseline` | re-record `scripts/baseline.json` after a deliberate change |
 
 ## Validating the harness itself
 
@@ -48,22 +49,34 @@ Run it after editing anything under `.opencode/` or `opencode.json`, and
 |---|---|---|---|
 | 1 | configure | `cmake --preset x64-debug` | exit 0. Skipped when `out/build/x64-debug/CMakeCache.txt` exists. |
 | 2 | build | `cmake --build out/build/x64-debug` | exit 0, **and zero new warnings in first-party code**. Warnings from `external/` are filtered out. |
-| 3 | test | `out/build/x64-debug/test.exe --test` | exit 0, and the doctest counts must not regress against the baseline below. |
+| 3 | test | `out/build/x64-debug/test.exe --test` | exit 0, and the doctest counts must not regress against `scripts/baseline.json`. |
 | 4 | format | `clang-format --dry-run -Werror` on in-scope files | exit 0. |
 
-## Baseline — measured 2026-08-28 on `x64-debug`
+## Baseline — `scripts/baseline.json`
 
-```
-build   exit 0    0 first-party warnings   (incremental; see T-020 for clean-build warnings)
-test    exit 0    test cases: 26 | 26 passed | 0 failed | 0 skipped
-                  assertions: 115 | 112 passed | 3 failed
-                  may_fail assertions: 3
-format  38 of 80 tracked files under src/ and test/ are non-conformant (T-021)
+**Do not restate these numbers here or anywhere else.** They live in
+`scripts/baseline.json`, and `gate.py` compares against them on every run,
+printing one of these in the `GATE SUMMARY` block:
+
+| Line | Meaning |
+|---|---|
+| `BASELINE: MATCH` | the run agrees with the recorded facts |
+| `BASELINE: AHEAD (...)` | you improved something. Not a failure. Re-record. |
+| `BASELINE: DRIFT (...)` | coverage dropped, `may_fail` changed, a warning appeared, or format debt grew. **Fails the gate.** |
+
+Re-record deliberately, never silently:
+
+```powershell
+python scripts/gate.py --scope all --update-baseline
 ```
 
-Quote this baseline in the **Baseline attribution** section of any evidence
-report. If your run produces different numbers, that difference is the finding
-— report it, do not smooth it over.
+This file exists because the numbers were previously copied as prose into three
+places and drifted three ways: `verifier.md` was told `may_fail` was 4 when it
+was 3, so it reported a false finding on **every** run, and the format debt was
+quoted as both 44/80 and 38/80 when it was 38/81. A number a machine checks
+cannot drift; a number in a sentence always does.
+
+To read the current values, open the file — do not memorise them.
 
 ## Things about this repo that will mislead you
 
@@ -77,13 +90,13 @@ report. If your run produces different numbers, that difference is the finding
   the include list when test counts look wrong. (See T-022.)
 - **`test.exe` is a GUI app.** Without `--test` (or `-t`) it opens a GLFW/ImGui
   window and blocks. Always pass `--test`.
-- **3 assertions fail by design.** `test/mvp_gaps_test.h` marks known MVP gaps
+- **Some assertions fail by design.** `test/mvp_gaps_test.h` marks known MVP gaps
   with doctest's `may_fail`, so they print `ERROR:` followed by
   `Allowed to fail so marking it as not failed`, and the run still exits 0.
-  The gate reports this as `may_fail assertions: 3`. **If that count changes,
-  say so explicitly** — a drop can mean a gap was closed, or that someone
-  deleted the marker. It was 4 until T-011 closed the permissions gap; the
-  `[mvp-gap][permissions]` case now passes without a waiver.
+  The gate reports this as `may_fail assertions: N` and checks N against
+  `scripts/baseline.json`. **A change in that count fails the gate** — a drop can
+  mean a gap was genuinely closed, or that someone deleted the marker, and only a
+  human can tell which. (T-011 closed the permissions gap and moved the count.)
 - **Exit code 0 alone is not a pass.** Because of the above, always read the
   doctest summary lines, not just the exit code.
 - **`clang-tidy` is not part of the gate.** There is no `.clang-tidy` config and

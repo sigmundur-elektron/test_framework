@@ -1,0 +1,27 @@
+{
+  "$comment": "Measured facts of a known-good gate run. The single source of truth for these numbers: do not restate them in prose elsewhere. Regenerate with: python scripts/gate.py --scope all --update-baseline",
+  "measured": {
+    "commit": "213c77c",
+    "date": "2026-08-28",
+    "preset": "x64-debug",
+    "platform": "Windows"
+  },
+  "build": {
+    "first_party_warnings": 0
+  },
+  "test": {
+    "test_cases": 26,
+    "test_cases_passed": 26,
+    "test_cases_failed": 0,
+    "assertions": 115,
+    "assertions_passed": 112,
+    "assertions_failed": 3,
+    "may_fail": 3
+  },
+  "format": {
+    "non_conformant": 38,
+    "total": 81,
+    "scope": "all",
+    "note": "pre-existing debt, see T-021"
+  }
+}

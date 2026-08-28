@@ -53,12 +53,15 @@ Read `.opencode/skills/quality-gate/SKILL.md` before running anything. Briefly:
   cases compiled *into* the app: `out/build/x64-debug/test.exe --test`.
 - **`cmake --build --preset` fails.** `CMakePresets.json` has configure presets
   only.
-- **Exit code 0 is not a pass.** `test/mvp_gaps_test.h` marks 4 known MVP gaps
+- **Exit code 0 is not a pass.** `test/mvp_gaps_test.h` marks known MVP gaps
   `may_fail`; they print `ERROR:` and the run still exits 0. Read the doctest
-  summary lines.
+  summary and the `BASELINE:` line.
+- **Never quote a baseline number from memory or from prose.** The measured facts
+  live in `scripts/baseline.json` and the gate checks them for you. They were
+  previously copied into three documents and drifted three ways.
 - **New test files are `#include`d by hand** in `src/main.cpp`. Forget that and
   the tests silently never run, and nothing catches it (T-022).
-- **44 of 80 files fail `clang-format`** (T-021). The gate checks changed files
+- **Most files fail `clang-format`** (T-021). The gate checks changed files
   only. Do not reformat unrelated files to make it green.
 
 ## Coordination
